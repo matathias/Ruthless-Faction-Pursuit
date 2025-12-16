@@ -2,4 +2,6 @@
 <LanguageData>
   <LetterLabelMechanoidThreatRuthless>Incoming mechanoids</LetterLabelMechanoidThreatRuthless>
   <LetterTextMechanoidThreatRuthless>The mechhive's scanning process is close to determining your location. When it locates you, it will send a massive mechanoid force to kill you.\n\nGather your supplies, then flee the map by any means you have.</LetterTextMechanoidThreatRuthless>
+  <LetterLabelRuthlessFaction>Incoming {0}</LetterLabelRuthlessFaction>
+  <LetterTextRuthlessFaction>The {0} faction is close to determining your location. When they locate you, they will send a massive force to kill you.\n\nGather your supplies, then flee the map by any means you have.</LetterTextRuthlessFaction>
 </LanguageData>

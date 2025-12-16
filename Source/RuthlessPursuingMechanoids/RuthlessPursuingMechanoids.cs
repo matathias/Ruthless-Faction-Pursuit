@@ -17,6 +17,11 @@ namespace RuthlessPursuingMechanoids
      *      if it's been deactivated, and set "Disabled" accordingly.
      *   3) Instead of only sending two waves of mechanoids after the player, we now send endless waves.
      */
+    /* #-#-# RUTHLESS 2.0 #-#-# */
+    /* I'm expanding the scope of this mod to allow the player to set *any* faction to endlessly pursue them. But for the sake of backwards compatibility with
+     * existing saves, I'm keeping the "RuthlessPursuingMechanoids" naming scheme.
+     * Hopefully future me won't regret this.
+     */
     public class ScenPart_RuthlessPursuingMechanoids : ScenPart
     {
         private bool DebugLoggingEnabled = true;
@@ -83,11 +88,15 @@ namespace RuthlessPursuingMechanoids
         /* - - ENDLESS WAVES PERIOD - - */
         private int EndlessWavesHours = EndlessWavesHoursDef;
         private string ewhbuf;
+        /* - - FACTION SETTINGS - - */
+        private Faction PursuitFaction = Faction.OfMechanoids;
+        private PawnsArrivalModeDef PursuitRaidType = PawnsArrivalModeDefOf.RandomDrop;
+        private bool PursuitFactionPermanentEnemy = true;
         /*-*-*-*-*- END OPTIONS VALUES -*-*-*-*-*/
 
         private Map cachedAlertMap;
 
-        private Alert_MechThreat alertCached;
+        private Alert_PursuitFactionThreat alertCached;
 
         private List<Map> tmpWarningKeys;
 
@@ -99,7 +108,7 @@ namespace RuthlessPursuingMechanoids
 
         private List<Map> tmpMaps = new List<Map>();
 
-        private Alert_MechThreat AlertCached
+        private Alert_PursuitFactionThreat AlertCached
         {
             get
             {
@@ -117,9 +126,10 @@ namespace RuthlessPursuingMechanoids
                 }
                 if (mapWarningTimers.TryGetValue(Find.CurrentMap, out var value) && Find.TickManager.TicksGame > TimerIntervalTick(value))
                 {
-                    alertCached = new Alert_MechThreat
+                    alertCached = new Alert_PursuitFactionThreat
                     {
-                        raidTick = mapRaidTimers[Find.CurrentMap]
+                        raidTick = mapRaidTimers[Find.CurrentMap],
+                        factionName = PursuitFaction.NameColored
                     };
                     cachedAlertMap = Find.CurrentMap;
                 }
@@ -156,7 +166,9 @@ namespace RuthlessPursuingMechanoids
             Scribe_Values.Look(ref WarningDelayVarianceHours, "warningDelayVarianceHours", WarningDelayVarianceHoursDef);
             Scribe_Values.Look(ref SecondWaveHours, "secondWaveHours", SecondWaveHoursDef);
             Scribe_Values.Look(ref disableEndlessWaves, "disableEndlessWaves", defaultValue: false);
-            Scribe_Values.Look(ref EndlessWavesHours, "endlessWavesHours", EndlessWavesHoursDef);
+            Scribe_Values.Look(ref PursuitFaction, "pursuitFaction", Faction.OfMechanoids);
+            Scribe_Values.Look(ref PursuitRaidType, "pursuitRaidType", PawnsArrivalModeDefOf.RandomDrop);
+            Scribe_Values.Look(ref PursuitFactionPermanentEnemy, "pursuitFactionPermanentEnemy", defaultValue: true);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 if (mapWarningTimers == null)
@@ -168,6 +180,7 @@ namespace RuthlessPursuingMechanoids
                     mapRaidTimers = new Dictionary<Map, int>();
                 }
             }
+            PursuitFaction.def.permanentEnemy = PursuitFactionPermanentEnemy;
             SetupRanges();
             DebugLog(PrintFields());
         }
@@ -205,9 +218,16 @@ namespace RuthlessPursuingMechanoids
             Widgets.TextFieldNumericLabeled(rect10, "rpmEndlessWaveHours".Translate(), ref EndlessWavesHours, ref ewhbuf, 1, 14400);
         }
 
+        public override void PreConfigure()
+        {
+            base.PreConfigure();
+            base.def.preventRemovalOfFaction = PursuitFaction.def;
+        }
+
         public override void PostWorldGenerate()
         {
             isFirstPeriod = true;
+            PursuitFaction.def.permanentEnemy = PursuitFactionPermanentEnemy;
             SetupRanges();
             mapWarningTimers.Clear();
             mapRaidTimers.Clear();
@@ -262,7 +282,14 @@ namespace RuthlessPursuingMechanoids
 
                 if (Find.TickManager.TicksGame == TimerIntervalTick(mapWarningTimers[tmpMap]))
                 {
-                    Find.LetterStack.ReceiveLetter("LetterLabelMechanoidThreatRuthless".Translate(), "LetterTextMechanoidThreatRuthless".Translate(), LetterDefOf.ThreatSmall);
+                    if (PursuitFaction == Faction.OfMechanoids)
+                    {
+                        Find.LetterStack.ReceiveLetter("LetterLabelMechanoidThreatRuthless".Translate(), "LetterTextMechanoidThreatRuthless".Translate(), LetterDefOf.ThreatSmall);
+                    }
+                    else
+                    {
+                        Find.LetterStack.ReceiveLetter("LetterLabelRuthlessFaction".Translate(PursuitFaction.NameColored), "LetterTextRuthlessFaction".Translate(PursuitFaction.NameColored), LetterDefOf.ThreatSmall);
+                    }
                 }
                 if (Find.TickManager.TicksGame == TimerIntervalTick(mapRaidTimers[tmpMap]))
                 {
@@ -286,7 +313,8 @@ namespace RuthlessPursuingMechanoids
 
         private void StartTimers(Map map)
         {
-            if (map.generatorDef != MapGeneratorDefOf.Mechhive && !(map.info.parent is PocketMapParent))
+            if (!(map.info.parent is PocketMapParent) &&
+                !(PursuitFaction == Faction.OfMechanoids && map.generatorDef != MapGeneratorDefOf.Mechhive))
             {
                 if (isFirstPeriod)
                 {
@@ -299,23 +327,22 @@ namespace RuthlessPursuingMechanoids
                     mapWarningTimers[map] = Find.TickManager.TicksGame + WarningDelayRange.RandomInRange;
                     mapRaidTimers[map] = Find.TickManager.TicksGame + RaidDelayRange.RandomInRange;
                 }
-                DebugLog($"Starting Timers | Warning timer: {mapWarningTimers[map]} Raid timer: {mapRaidTimers[map]}");
+                DebugLog($"Starting Timers for faction {PursuitFaction.Name} | Warning timer: {mapWarningTimers[map]} Raid timer: {mapRaidTimers[map]}");
             }
         }
 
         private bool UpdateDisabled()
         {
-            /* Vanilla mechanoids are permanently hostile. Some mods allow for non-hostile mechs, though, so we check for that here.
-             * We check the permanentEnemy flag first, so that we don't hit the more costly HostileTo function if the mechs will always
-               be hostile. */
-            if (Faction.OfMechanoids == null || Faction.OfMechanoids.deactivated || 
-                (!Faction.OfMechanoids.def.permanentEnemy && !FactionUtility.HostileTo(Faction.OfMechanoids, Faction.OfPlayer)))
+            if (PursuitFaction == null || PursuitFaction.deactivated || PursuitFaction.defeated || 
+                (!PursuitFaction.def.permanentEnemy && !FactionUtility.HostileTo(PursuitFaction, Faction.OfPlayer)))
             {
                 Disabled = true;
+                DebugLog($"Disabling pursuit for faction {PursuitFaction?.Name ?? "null"}");
             }
             else
             {
                 Disabled = false;
+                DebugLog($"Pursuit enabled for faction {PursuitFaction?.Name ?? "null"}");
             }
             return Disabled;
         }
@@ -342,8 +369,8 @@ namespace RuthlessPursuingMechanoids
             incidentParms.forced = true;
             incidentParms.target = map;
             incidentParms.points = Mathf.Max(minPoints, StorytellerUtility.DefaultThreatPointsNow(map) * pointsMultiplier);
-            incidentParms.faction = Faction.OfMechanoids;
-            incidentParms.raidArrivalMode = PawnsArrivalModeDefOf.RandomDrop;
+            incidentParms.faction = PursuitFaction;
+            incidentParms.raidArrivalMode = PursuitRaidType;
             incidentParms.raidStrategy = RaidStrategyDefOf.ImmediateAttack;
             IncidentDefOf.RaidEnemy.Worker.TryExecute(incidentParms);
             DebugLog($"Firing new raid with {incidentParms.points} threat points");
@@ -363,6 +390,9 @@ namespace RuthlessPursuingMechanoids
             StringBuilder output = new StringBuilder();
 
             output.Append($"Pursuit Disabled: {Disabled}");
+            output.Append($" Pursuit Faction: {PursuitFaction.Name}");
+            output.Append($" Permanent Enemy: {PursuitFactionPermanentEnemy.ToString()}");
+            output.AppendLine($" Pursuit Raid Type: {PursuitRaidType.defName}");
             output.Append($" isFirstPeriod: {isFirstPeriod}");
             output.Append($" SecondWaveHours: {SecondWaveHours}");
             output.Append($" disableEndlessWaves: {disableEndlessWaves}");
@@ -380,6 +410,52 @@ namespace RuthlessPursuingMechanoids
                 string output = "[Ruthless Pursuing Mechanoids] " + msg;
                 Log.Message(output);
             }
+        }
+    }
+
+    public class Alert_PursuitFactionThreat : Alert_Scenario
+    {
+        public int raidTick;
+
+        public string factionName;
+
+        private bool Red => Find.TickManager.TicksGame > raidTick - 60000;
+
+        private bool Critical => Find.TickManager.TicksGame > raidTick;
+
+        protected override Color BGColor
+        {
+            get
+            {
+                if (!Red)
+                {
+                    return Color.clear;
+                }
+                return Alert_Critical.BgColor();
+            }
+        }
+
+        public override AlertReport GetReport()
+        {
+            return AlertReport.Active;
+        }
+
+        public override string GetLabel()
+        {
+            if (Critical)
+            {
+                return "AlertPursuitThreatCritical".Translate(factionName);
+            }
+            return "AlertPursuitThreat".Translate(factionName) + ": " + (raidTick - Find.TickManager.TicksGame).ToStringTicksToPeriod(allowSeconds: false, shortForm: false, canUseDecimals: false);
+        }
+
+        public override TaggedString GetExplanation()
+        {
+            if (Critical)
+            {
+                return "AlertPursuitThreatCriticalDesc".Translate(factionName);
+            }
+            return "AlertPursuitThreatDesc".Translate(factionName);
         }
     }
 }
