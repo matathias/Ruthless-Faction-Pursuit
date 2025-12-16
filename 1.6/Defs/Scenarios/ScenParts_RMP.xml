@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <ScenPartDef>
+    <defName>RuthlessPursuingMechanoids</defName>
+    <label>ruthless pursuing mechanoids</label>
+    <category>Misc</category>
+    <scenPartClass>RuthlessPursuingMechanoids.ScenPart_RuthlessPursuingMechanoids</scenPartClass>
+    <maxUses>1</maxUses>
+    <preventRemovalOfFaction>Mechanoid</preventRemovalOfFaction>
+  </ScenPartDef>
+</Defs>

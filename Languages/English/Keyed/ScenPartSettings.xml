@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+  <rpmTimeInHours>All values are in hours</rpmTimeInHours>
+  <rpmFirstRaidMeanDelay>Initial Raid Delay</rpmFirstRaidMeanDelay>
+  <rpmFirstRaidMeanDelayVariance>Initial Raid Variance</rpmFirstRaidMeanDelayVariance>
+  <rpmRaidMeanDelay>Raid Mean Delay</rpmRaidMeanDelay>
+  <rpmRaidMeanDelayVariance>Raid Delay Variance</rpmRaidMeanDelayVariance>
+  <rpmWarningDisabled>Disable Warning Alert</rpmWarningDisabled>
+  <rpmWarningMeanDelay>Warning Alert Mean</rpmWarningMeanDelay>
+  <rpmWarningMeanDelayVariance>Warning Variance</rpmWarningMeanDelayVariance>
+  <rpmSecondWaveHours>Second Wave Delay</rpmSecondWaveHours>
+  <rpmDisableEndless>Disable Endless Waves</rpmDisableEndless>
+  <rpmEndlessWaveHours>Endless Waves Delay</rpmEndlessWaveHours>
+</LanguageData>
