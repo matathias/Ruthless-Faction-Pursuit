@@ -365,7 +365,15 @@ namespace RuthlessPursuingMechanoids
 
         private void StartTimers(Map map)
         {
-            if (!(map.info.parent is PocketMapParent) && PursuitFaction != null &&
+            /* If the raid type is EdgeWalkIn then don't start a timer if the map is in space. Not only is EdgeWalkIn not really valid for space maps, the poor bastards
+             * would just suffocate and die. Not to mention that EdgeWalkIn factions wouldn't even have a way of reaching space! */
+            /* Not sure how to check if a faction has raid pawns that would survive in space, though... so currently, factions with a tech level high enough for drop
+             * pods but without any vac resist would just suicide themselves onto a space map. Pretty silly, but if a player is jumping to space to escape pursuit anyways,
+             * then I'm not sure it *really* matters. */
+            if (!(map.info.parent is PocketMapParent) &&
+                PursuitFaction != null &&
+                !(PursuitRaidType == PawnsArrivalModeDefOf.EdgeWalkIn && 
+                  (map.generatorDef == MapGeneratorDefOf.OrbitalRelay || map.generatorDef == MapGeneratorDefOf.Space || map.generatorDef ==  MapGeneratorDefOf.SpacePocket)) &&
                 !(pursuitFactionDef == FactionDefOf.Mechanoid && map.generatorDef == MapGeneratorDefOf.Mechhive))
             {
                 if (isFirstPeriod)

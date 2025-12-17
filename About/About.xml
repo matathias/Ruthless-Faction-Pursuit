@@ -12,9 +12,16 @@
 		<displayName>Rimworld - Odyssey</displayName>
 		<steamWorkshopUrl>https://store.steampowered.com/app/3022790/RimWorld__Odyssey/</steamWorkshopUrl>
 	</li>
+    <li>
+      <packageId>brrainz.harmony</packageId>
+      <displayName>Harmony</displayName>
+      <steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+      <downloadUrl>https://github.com/pardeike/HarmonyRimWorld/releases/latest</downloadUrl>
+    </li>
 	</modDependencies>
 	<loadAfter>
 		<li>Ludeon.RimWorld.Odyssey</li>
+		<li>brrainz.harmony</li>
 	</loadAfter>
 	<description>[h2]Ruthless Faction Update![/h2]
 
@@ -22,7 +29,7 @@ No longer is ruthless pursuit limited to the mechanoid faction. Now, you can set
 
 ⠀
 
-Pursuit will continue until the faction is destroyed, or you become non-hostile with the faction. If you become hostile to them, then pursuit will begin again, possibly with minimal warning!
+Pursuit will continue until the faction is destroyed (or until the mechhive is destroyed, if the pursuing faction is the Mechanoids). Pursuit will also stop if you become non-hostile with the faction. If you become hostile to them again afterward, then pursuit will begin again, possibly with minimal warning!
 
 ⠀
 
@@ -30,7 +37,26 @@ There is a setting to make a faction "permanent hostile". This will reset the fa
 
 ⠀
 
-You can also change the type of raid that the faction will "pursue" you with. The default is RandomDrop. I haven't tested all the other raid types, so I don't know if any of them are broken with this scenario part. Test at your own peril.
+There are also a number of additional options to customize the Ruthless Faction:
+
+[list]
+	[*] [b]Initial Raid Delay[/b] and [b]Initial Raid Variance[/b] control how long it takes for the faction to raid your starting map. In the vanilla Pursuing Mechanoids scenario, these are 12 and 0 respectively, meaning that the first raid is always exactly 12 hours after starting the game.
+	[*] [b]Raid Mean Delay[/b] and [b]Raid Delay Variance[/b] control how much time passes between you first arriving on a map and the faction raiding you for every map [i]after[/i] your starting map. In vanilla, these are 636 and 204 respectively, meaning that you always get raided between 18 and 35 days after settling.
+	[*] [b]Warning Alert Mean[/b] and [b]Warning Alert Variance[/b] control when you first get an alert telling you how much time you have before the faction arrives. The Warning Alert Mean is the number of hours [i]before[/i] the Raid Mean Delay that you get a warning, so smaller values mean that you get less forewarning, while larger values mean more forewarning. In vanilla, these are 276 and 24 respectively, effectively meaning that you always get the alert between 14 and 16 days after first arriving on a map. [b]NOTE:[/b] If (Raid Mean Delay - Raid Delay Variance) is a lower value than (Warning Alert Mean + Warning Alert Variance), then you might not get a warning alert until after the raid actually happens. I consider this an intentional feature.
+	[*] [b]Second Wave Delay[/b] refers to how long it takes for a second raid to arrive on the map after the faction has already raided you. In vanilla, this value is 12.
+	[*] [b]Endless Waves Delay[/b] refers to how much time passes before a new raid arrives, after the second raid has already arrived. This feature is exclusive to this mod, and the default value is 3.
+	[*] [b]Normal Raid Candidate[/b] determines whether or not the faction can be chosen for normal raids. If set to false (as is default), the faction will only raid you as a result of these pursuit timers.
+[/list]
+
+For the Variance settings, non-zero variance means that the raid can show up at a random time within Variance hours of the Mean. Set variance to zero, and the raid will always show up exactly at the Mean delay. The greater the variance, the larger the possible range of times.
+
+⠀
+
+You can disable the warning alert, just in case you're into getting ambushed. And if you [i]really[/i] don't want to move, you can also disable the endless waves.
+
+⠀
+
+This mod should be compatible with other mods that allow you to have non-hostile relations with factions that are normally permanently hostile.
 
 ⠀
 
@@ -49,43 +75,7 @@ Except, there are two key problems:
 	[*] The mechanoids only send two waves of mechs at you, and are even gracious enough to give you 12 hours between waves. Find a way to beat them, and you're home free, baby. They'll never attack that map again (except through standard raids).
 [/list]
 
-[h2]Enter Ruthless Pursuing Mechanoids![/h2]
-
-An alternate version of the "Pursuing Mechanoids" scenario part.
-
-⠀
-
-These ruthless mechanoids don't care whether or not you have a grav engine; they're after you for the love of the game. And they won't stop attacking you after just two waves, either. After the second wave arrives on a map, new waves will drop in every 3 hours, all even stronger than the second wave. This scenario is supposed to force nomadism, after all, so if you don't wanna get rolled, then you better roll out, bucko.
-
-⠀
-
-Destroying the mechhive will stop the ruthless pursuit, just like with the vanilla scenario part. Or at least, it should, but this is the one part I haven't actually tested, yet...
-
-[h3]NOTE[/h3]
-
-[b]Ruthless Pursuing Mechanoids[/b] does [i]not[/i] replace the vanilla "Pursuing Mechanoids" scenario part. I haven't touched the actual gravship scenario, either. If you want to use this new scenario part, you'll need to add it yourself in the scenario editor.
-
-[h2]SETTINGS UPDATE[/h2]
-
-I've now added a number of customization settings to the [b]Ruthless Pursuing Mechanoids[/b] scenario part. I haven't fully tested them all, so let me know if something doesn't work. The options are:
-
-[list]
-	[*] [b]Initial Raid Delay[/b] and [b]Initial Raid Variance[/b] control how long it takes for the mechanoids to show up at your starting map. In vanilla, these are 12 and 0 respectively, meaning that the first raid is always exactly 12 hours after starting the game.
-	[*] [b]Raid Mean Delay[/b] and [b]Raid Delay Variance[/b] control how much time passes between you first arriving on a map and the mechanoids raiding you for every map [i]after[/i] your starting map. In vanilla, these are 636 and 204 respectively, meaning that you always get raided between 18 and 35 days after settling.
-	[*] [b]Warning Alert Mean[/b] and [b]Warning Alert Variance[/b] control when you first get an alert telling you how much time you have before the mechanoids arrive. The Warning Alert Mean is the number of hours [i]before[/i] the Raid Mean Delay that you get a warning, so smaller values mean that you get less forewarning, while larger values mean more forewarning. In vanilla, these are 276 and 24 respectively, effectively meaning that you always get the alert between 14 and 16 days after first arriving on a map. [b]NOTE:[/b] If (Raid Mean Delay - Raid Delay Variance) is a lower value than (Warning Alert Mean + Warning Alert Variance), then you might not get a warning alert until after the raid actually happens. I consider this an intentional feature.
-	[*] [b]Second Wave Delay[/b] refers to how long it takes for the second wave of mechanoids to arrive on the map after they have already raided you. In vanilla, this value is 12.
-	[*] [b]Endless Waves Delay[/b] refers to how much time passes before a new set of mechanoids raid you, after the second wave has already arrived. This feature is exclusive to this mod, and the default value is 3.
-[/list]
-
-For the Variance settings, non-zero variance means that the raid can show up at a random time within Variance hours of the Mean. Set variance to zero, and the raid will always show up exactly at the Mean delay. The greater the variance, the larger the possible range of times.
-
-⠀
-
-You can disable the warning alert, just in case you're into getting ambushed. And if you [i]really[/i] don't want to move, you can also disable the endless waves.
-
-⠀
-
-This mod should also now be compatible with other mods that allow you to have non-hostile relations with the mechanoids faction.
+With [b]Ruthless Faction Pursuit[/b], not only are you no longer restricted to being pursued by mechanoids, but you also will be pursued whether or not you have a grav engine. That's right, you can use this scenario part in gravship-less runs!
 
 ⠀
 
