@@ -1,0 +1,52 @@
+## Ruthless Faction Update!
+
+No longer is ruthless pursuit limited to the mechanoid faction. Now, you can set any faction that you'd like to endlessly pursue you!
+
+Pursuit will continue until the faction is destroyed, or you become non-hostile with the faction. If you become hostile to them, then pursuit will begin again, possibly with minimal warning!
+
+There is a setting to make a faction "permanent hostile". This will reset the faction's goodwill to -100 every 12 in-game hours, forcing hostilities. Unfortunately, due to the way factions are defined, it isn't reasonably possible for this mod to make a faction truly permanently hostile (or to make a permanently hostile faction _not_ hostile). But this workaround should work well enough.
+
+You can also change the type of raid that the faction will "pursue" you with. The default is RandomDrop. I haven't tested all the other raid types, so I don't know if any of them are broken with this scenario part. Test at your own peril.
+
+As to why this mod exists, it all started with the "Pursuing Mechanoids" scenario part. To explain...
+	
+## In base Odyssey,
+
+there is a "Pursuing Mechanoids" scenario part that will cause the Mechanoids to assault your colony after 18-35 days, encouraging a nomadic playstyle. It was added for the Odyssey-specific gravship start, but you can technically add the scenario part to any scenario. Sounds cool, right?
+
+Except, there are two key problems:
+
+* The mechanoids only pursue you if you have a grav engine. More specifically, they only attack maps that have a grav engine, and only if a gravship landed on that map (aside from when you first get the grav engine). No engine, no pursuit. This means that adding the "Pursuing Mechanoids" scenario part to any scenario that doesn't start you with a gravship results in nothing happening until you actually get the grav engine. And then, when you _do_ get the grav engine, the game immediately slaps you with a sudden 10 hour warning, because the Pursuing Mechanoids scenario part _expects_ its first timer to activate on the gravship scenario's starting orbital platform, not some random forest in the middle of bumfuck nowhere.
+* The mechanoids only send two waves of mechs at you, and are even gracious enough to give you 12 hours between waves. Find a way to beat them, and you're home free, baby. They'll never attack that map again (except through standard raids).
+
+## Enter Ruthless Pursuing Mechanoids! (Now Ruthless Faction Pursuit)
+
+An alternate version of the "Pursuing Mechanoids" scenario part.
+
+These ruthless mechanoids don't care whether or not you have a grav engine; they're after you for the love of the game. And they won't stop attacking you after just two waves, either. After the second wave arrives on a map, new waves will drop in every 3 hours, all even stronger than the second wave. This scenario is supposed to force nomadism, after all, so if you don't wanna get rolled, then you better roll out, bucko.
+
+Destroying the mechhive will stop the ruthless pursuit, just like with the vanilla scenario part. Or at least, it should, but this is the one part I haven't actually tested, yet...
+
+### NOTE
+
+**Ruthless Pursuing Mechanoids** does _not_ replace the vanilla "Pursuing Mechanoids" scenario part. I haven't touched the actual gravship scenario, either. If you want to use this new scenario part, you'll need to add it yourself in the scenario editor.
+
+## SETTINGS UPDATE
+
+I've now added a number of customization settings to the **Ruthless Faction Pursuit** scenario part. I haven't fully tested them all, so let me know if something doesn't work. The options are:
+
+* **Initial Raid Delay** and **Initial Raid Variance** control how long it takes for the mechanoids to show up at your starting map. In vanilla, these are 12 and 0 respectively, meaning that the first raid is always exactly 12 hours after starting the game.
+* **Raid Mean Delay** and **Raid Delay Variance** control how much time passes between you first arriving on a map and the mechanoids raiding you for every map _after_ your starting map. In vanilla, these are 636 and 204 respectively, meaning that you always get raided between 18 and 35 days after settling.
+* **Warning Alert Mean** and **Warning Alert Variance** control when you first get an alert telling you how much time you have before the mechanoids arrive. The Warning Alert Mean is the number of hours _before_ the Raid Mean Delay that you get a warning, so smaller values mean that you get less forewarning, while larger values mean more forewarning. In vanilla, these are 276 and 24 respectively, effectively meaning that you always get the alert between 14 and 16 days after first arriving on a map. **NOTE:** If (Raid Mean Delay - Raid Delay Variance) is a lower value than (Warning Alert Mean + Warning Alert Variance), then you might not get a warning alert until after the raid actually happens. I consider this an intentional feature.
+* **Second Wave Delay** refers to how long it takes for the second wave of mechanoids to arrive on the map after they have already raided you. In vanilla, this value is 12.
+* **Endless Waves Delay** refers to how much time passes before a new set of mechanoids raid you, after the second wave has already arrived. This feature is exclusive to this mod, and the default value is 3.
+
+For the Variance settings, non-zero variance means that the raid can show up at a random time within Variance hours of the Mean. Set variance to zero, and the raid will always show up exactly at the Mean delay. The greater the variance, the larger the possible range of times.
+
+You can disable the warning alert, just in case you're into getting ambushed. And if you _really_ don't want to move, you can also disable the endless waves.
+
+You can also control whether or not the Ruthless Faction can be chosen for normal raids.
+
+This mod should also now be compatible with other mods that allow you to have non-hostile relations with the mechanoids faction.
+
+All of the non-debug text strings have localization keys, so feel free to upload translations if you want. I've included the source code in the mod upload too, so feel free to make your own edits and upload new versions of the mod. I only ask that you credit me.
