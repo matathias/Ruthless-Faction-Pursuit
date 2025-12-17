@@ -93,7 +93,7 @@ namespace RuthlessPursuingMechanoids
         private int EndlessWavesHours = EndlessWavesHoursDef;
         private string ewhbuf;
         /* - - FACTION SETTINGS - - */
-        internal Faction PursuitFaction;
+        internal Faction PursuitFaction = null;
         internal PawnsArrivalModeDef PursuitRaidType = PawnsArrivalModeDefOf.RandomDrop;
         internal bool PursuitFactionPermanentEnemy = true;
         /*-*-*-*-*- END OPTIONS VALUES -*-*-*-*-*/
@@ -170,10 +170,9 @@ namespace RuthlessPursuingMechanoids
             Scribe_Values.Look(ref WarningDelayVarianceHours, "warningDelayVarianceHours", WarningDelayVarianceHoursDef);
             Scribe_Values.Look(ref SecondWaveHours, "secondWaveHours", SecondWaveHoursDef);
             Scribe_Values.Look(ref disableEndlessWaves, "disableEndlessWaves", defaultValue: false);
-            Scribe_Values.Look(ref PursuitRaidType, "pursuitRaidType", PawnsArrivalModeDefOf.RandomDrop);
+            Scribe_Defs.Look(ref PursuitRaidType, "pursuitRaidType");
             Scribe_Values.Look(ref PursuitFactionPermanentEnemy, "pursuitFactionPermanentEnemy", defaultValue: true);
-            Scribe_Values.Look(ref pursuitFactionDef, "pursuitFactionDef", FactionDefOf.Mechanoid);
-            Scribe_Values.Look(ref PursuitFaction, "pursuitFaction", Faction.OfMechanoids);
+            Scribe_Defs.Look(ref pursuitFactionDef, "pursuitFactionDef");
             Scribe_Values.Look(ref canDoNormalRaid, "canDoNormalRaid", defaultValue: false);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
@@ -185,6 +184,15 @@ namespace RuthlessPursuingMechanoids
                 {
                     mapRaidTimers = new Dictionary<Map, int>();
                 }
+                if (pursuitFactionDef == null)
+                {
+                    pursuitFactionDef = FactionDefOf.Mechanoid;
+                }
+                if (PursuitRaidType == null)
+                {
+                    PursuitRaidType = PawnsArrivalModeDefOf.RandomDrop;
+                }
+                PursuitFaction = Find.FactionManager.FirstFactionOfDef(pursuitFactionDef);
             }
             SetupRanges();
             DebugLog(PrintFields());
@@ -367,9 +375,6 @@ namespace RuthlessPursuingMechanoids
         {
             /* If the raid type is EdgeWalkIn then don't start a timer if the map is in space. Not only is EdgeWalkIn not really valid for space maps, the poor bastards
              * would just suffocate and die. Not to mention that EdgeWalkIn factions wouldn't even have a way of reaching space! */
-            /* Not sure how to check if a faction has raid pawns that would survive in space, though... so currently, factions with a tech level high enough for drop
-             * pods but without any vac resist would just suicide themselves onto a space map. Pretty silly, but if a player is jumping to space to escape pursuit anyways,
-             * then I'm not sure it *really* matters. */
             if (!(map.info.parent is PocketMapParent) &&
                 PursuitFaction != null &&
                 !(PursuitRaidType == PawnsArrivalModeDefOf.EdgeWalkIn && 
@@ -387,7 +392,7 @@ namespace RuthlessPursuingMechanoids
                     mapWarningTimers[map] = Find.TickManager.TicksGame + WarningDelayRange.RandomInRange;
                     mapRaidTimers[map] = Find.TickManager.TicksGame + RaidDelayRange.RandomInRange;
                 }
-                DebugLog($"Starting Timers for faction {PursuitFaction.Name} | Warning timer: {mapWarningTimers[map]} Raid timer: {mapRaidTimers[map]}");
+                DebugLog($"Starting Timers for faction {PursuitFaction.Name} | Warning timer: {mapWarningTimers[map]} Raid timer: {mapRaidTimers[map]} Current Tick: {Find.TickManager.TicksGame}");
             }
         }
 
