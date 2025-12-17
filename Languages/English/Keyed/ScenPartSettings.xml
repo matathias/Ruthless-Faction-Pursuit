@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <LanguageData>
+  <rpmFactionPicker>Endless Pursuit Faction:</rpmFactionPicker>
+  <rpmRaidTypePicker>Pursuit Raid Type:</rpmRaidTypePicker>
+  <rpmPermanentEnemy>Perma-Hostile Faction</rpmPermanentEnemy>
   <rpmTimeInHours>All values are in hours</rpmTimeInHours>
   <rpmFirstRaidMeanDelay>Initial Raid Delay</rpmFirstRaidMeanDelay>
   <rpmFirstRaidMeanDelayVariance>Initial Raid Variance</rpmFirstRaidMeanDelayVariance>

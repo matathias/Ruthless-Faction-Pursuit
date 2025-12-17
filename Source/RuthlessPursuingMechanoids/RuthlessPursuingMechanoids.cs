@@ -28,6 +28,7 @@ namespace RuthlessPursuingMechanoids
         private Dictionary<Map, int> mapWarningTimers = new Dictionary<Map, int>();
 
         private Dictionary<Map, int> mapRaidTimers = new Dictionary<Map, int>();
+        internal FactionDef pursuitFactionDef = FactionDefOf.Mechanoid;
 
         /* 14 to 16 days */
         private IntRange WarningDelayRange = new IntRange(14 * 24 * GenDate.TicksPerHour, 16 * 24 * GenDate.TicksPerHour);
@@ -169,6 +170,7 @@ namespace RuthlessPursuingMechanoids
             Scribe_Values.Look(ref PursuitFaction, "pursuitFaction", Faction.OfMechanoids);
             Scribe_Values.Look(ref PursuitRaidType, "pursuitRaidType", PawnsArrivalModeDefOf.RandomDrop);
             Scribe_Values.Look(ref PursuitFactionPermanentEnemy, "pursuitFactionPermanentEnemy", defaultValue: true);
+            Scribe_Values.Look(ref pursuitFactionDef, "pursuitFactionDef", FactionDefOf.Mechanoid);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 if (mapWarningTimers == null)
@@ -187,47 +189,89 @@ namespace RuthlessPursuingMechanoids
 
         public override void DoEditInterface(Listing_ScenEdit listing)
         {
-            float totalBaseHeight = 12f;
+            float totalBaseHeight = 17f;
             Rect scenPartRect = listing.GetScenPartRect(this, ScenPart.RowHeight * totalBaseHeight);
             float rowHeight = scenPartRect.height / totalBaseHeight;
             new Rect(scenPartRect.x, scenPartRect.y, scenPartRect.width, rowHeight);
             Rect rect0 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight, scenPartRect.width, rowHeight);
-            Rect rect1 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 2f, scenPartRect.width, rowHeight);
-            Rect rect2 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 3f, scenPartRect.width, rowHeight);
-            Rect rect3 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 4f, scenPartRect.width, rowHeight);
-            Rect rect4 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 5f, scenPartRect.width, rowHeight);
-            Rect rect5 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 6f, scenPartRect.width, rowHeight);
-            Rect rect6 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 7f, scenPartRect.width, rowHeight);
-            Rect rect7 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 8f, scenPartRect.width, rowHeight);
-            Rect rect8 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 9f, scenPartRect.width, rowHeight);
-            Rect rect9 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 10f, scenPartRect.width, rowHeight);
-            Rect rect10 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 11f, scenPartRect.width, rowHeight);
+            Rect rect1 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 3f, scenPartRect.width, rowHeight);
+            Rect rect2 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 5f, scenPartRect.width, rowHeight);
+            Rect rect3 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 6f, scenPartRect.width, rowHeight);
+            Rect rect4 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 7f, scenPartRect.width, rowHeight);
+            Rect rect5 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 8f, scenPartRect.width, rowHeight);
+            Rect rect6 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 9f, scenPartRect.width, rowHeight);
+            Rect rect7 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 10f, scenPartRect.width, rowHeight);
+            Rect rect8 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 11f, scenPartRect.width, rowHeight);
+            Rect rect9 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 12f, scenPartRect.width, rowHeight);
+            Rect rect10 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 13f, scenPartRect.width, rowHeight);
+            Rect rect11 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 14f, scenPartRect.width, rowHeight);
+            Rect rect12 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 15f, scenPartRect.width, rowHeight);
+            Rect rect13 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 16f, scenPartRect.width, rowHeight);
+            /* -- Widgets for picking faction and raid type -- */
+            /* Faction Picker */
+            Widgets.TextArea(rect0, "rpmFactionPicker".Translate(), true);
+            if (!Widgets.ButtonText(listing.GetScenPartRect(this, ScenPart.RowHeight), pursuitFactionDef.LabelCap))
+            {
+                return;
+            }
+            List<FloatMenuOption> faclist = new List<FloatMenuOption>();
+            foreach (FactionDef item in DefDatabase<FactionDef>.AllDefs.Where((FactionDef d) => (!d.isPlayer && !d.raidsForbidden)))
+            {
+                FactionDef localFd = item;
+                faclist.Add(new FloatMenuOption(localFd.LabelCap, delegate
+                {
+                    pursuitFactionDef = localFd;
+                }));
+            }
+            Find.WindowStack.Add(new FloatMenu(faclist));
+            /* Raid type picker */
+            Widgets.TextArea(rect1, "rpmRaidTypePicker".Translate(), true);
+            if (!Widgets.ButtonText(listing.GetScenPartRect(this, ScenPart.RowHeight), PursuitRaidType.LabelCap))
+            {
+                return;
+            }
+            List<FloatMenuOption> raidlist = new List<FloatMenuOption>();
+            foreach (PawnsArrivalModeDef item in DefDatabase<PawnsArrivalModeDef>.AllDefs.Where((PawnsArrivalModeDef d) => (d.minTechLevel <= pursuitFactionDef.techLevel)))
+            {
+                PawnsArrivalModeDef localPamd = item;
+                raidlist.Add(new FloatMenuOption(localPamd.LabelCap, delegate
+                {
+                    PursuitRaidType = localPamd;
+                }));
+            }
+            Find.WindowStack.Add(new FloatMenu(raidlist));
+            /* Permanent enemy checkbox */
+            Widgets.CheckboxLabeled(rect2, "rpmPermanentEnemy".Translate(), ref PursuitFactionPermanentEnemy);
+
+            /* -- Fields for setting the timers -- */
             // 14400 hours is ten rimyears. Should be plenty for a maximum bound
             // The minimum value for all raid delays is 1 hour. If it were 0, then we could hit some infinite loop shit
             //   1 hour is pretty fucking low, probably unplayably low in most cases. But if the user really wants to fuck themselves, then why not let them?
-            Widgets.TextArea(rect0, "rpmTimeInHours".Translate(), true);
-            Widgets.TextFieldNumericLabeled(rect1, "rpmFirstRaidMeanDelay".Translate(), ref FirstRaidDelayHours, ref frdhbuf, 1, 14400);
-            Widgets.TextFieldNumericLabeled(rect2, "rpmFirstRaidMeanDelayVariance".Translate(), ref FirstRaidDelayVarianceHours, ref frdvhbuf, 0, 14400);
-            Widgets.TextFieldNumericLabeled(rect3, "rpmRaidMeanDelay".Translate(), ref RaidDelayHours, ref rdhbuf, 1, 14400);
-            Widgets.TextFieldNumericLabeled(rect4, "rpmRaidMeanDelayVariance".Translate(), ref RaidDelayVarianceHours, ref rdvhbuf, 0, 14400);
-            Widgets.CheckboxLabeled(rect5, "rpmWarningDisabled".Translate(), ref warningDisabled);
-            Widgets.TextFieldNumericLabeled(rect6, "rpmWarningMeanDelay".Translate(), ref WarningDelayHours, ref wdhbuf, 0, 14400);
-            Widgets.TextFieldNumericLabeled(rect7, "rpmWarningMeanDelayVariance".Translate(), ref WarningDelayVarianceHours, ref wdvhbuf, 0, 14400);
-            Widgets.TextFieldNumericLabeled(rect8, "rpmSecondWaveHours".Translate(), ref SecondWaveHours, ref swhbuf, 1, 14400);
-            Widgets.CheckboxLabeled(rect9, "rpmDisableEndless".Translate(), ref disableEndlessWaves);
-            Widgets.TextFieldNumericLabeled(rect10, "rpmEndlessWaveHours".Translate(), ref EndlessWavesHours, ref ewhbuf, 1, 14400);
+            Widgets.TextArea(rect3, "rpmTimeInHours".Translate(), true);
+            Widgets.TextFieldNumericLabeled(rect4, "rpmFirstRaidMeanDelay".Translate(), ref FirstRaidDelayHours, ref frdhbuf, 1, 14400);
+            Widgets.TextFieldNumericLabeled(rect5, "rpmFirstRaidMeanDelayVariance".Translate(), ref FirstRaidDelayVarianceHours, ref frdvhbuf, 0, 14400);
+            Widgets.TextFieldNumericLabeled(rect6, "rpmRaidMeanDelay".Translate(), ref RaidDelayHours, ref rdhbuf, 1, 14400);
+            Widgets.TextFieldNumericLabeled(rect7, "rpmRaidMeanDelayVariance".Translate(), ref RaidDelayVarianceHours, ref rdvhbuf, 0, 14400);
+            Widgets.CheckboxLabeled(rect8, "rpmWarningDisabled".Translate(), ref warningDisabled);
+            Widgets.TextFieldNumericLabeled(rect9, "rpmWarningMeanDelay".Translate(), ref WarningDelayHours, ref wdhbuf, 0, 14400);
+            Widgets.TextFieldNumericLabeled(rect10, "rpmWarningMeanDelayVariance".Translate(), ref WarningDelayVarianceHours, ref wdvhbuf, 0, 14400);
+            Widgets.TextFieldNumericLabeled(rect11, "rpmSecondWaveHours".Translate(), ref SecondWaveHours, ref swhbuf, 1, 14400);
+            Widgets.CheckboxLabeled(rect12, "rpmDisableEndless".Translate(), ref disableEndlessWaves);
+            Widgets.TextFieldNumericLabeled(rect13, "rpmEndlessWaveHours".Translate(), ref EndlessWavesHours, ref ewhbuf, 1, 14400);
         }
 
         public override void PreConfigure()
         {
             base.PreConfigure();
-            base.def.preventRemovalOfFaction = PursuitFaction.def;
+            pursuitFactionDef.permanentEnemy = PursuitFactionPermanentEnemy;
+            base.def.preventRemovalOfFaction = pursuitFactionDef;
+            base.def.maxUses = 1;
         }
 
         public override void PostWorldGenerate()
         {
             isFirstPeriod = true;
-            PursuitFaction.def.permanentEnemy = PursuitFactionPermanentEnemy;
+            PursuitFaction = Find.FactionManager.FirstFactionOfDef(pursuitFactionDef);
             SetupRanges();
             mapWarningTimers.Clear();
             mapRaidTimers.Clear();
@@ -379,7 +423,7 @@ namespace RuthlessPursuingMechanoids
         public override IEnumerable<Alert> GetAlerts()
         {
             Map currentMap = Find.CurrentMap;
-            if (currentMap != null && currentMap.IsPlayerHome && AlertCached != null)
+            if (currentMap != null && AlertCached != null)
             {
                 yield return AlertCached;
             }
