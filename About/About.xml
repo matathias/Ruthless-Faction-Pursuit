@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-	<name>Ruthless Pursuing Mechanoids</name>
+	<name>Ruthless Faction Pursuit</name>
 	<author>Matathias</author>
 	<supportedVersions>
 		<li>1.6</li>
@@ -16,7 +16,27 @@
 	<loadAfter>
 		<li>Ludeon.RimWorld.Odyssey</li>
 	</loadAfter>
-	<description>[h2]In base Odyssey,[/h2]
+	<description>[h2]Ruthless Faction Update![/h2]
+
+No longer is ruthless pursuit limited to the mechanoid faction. Now, you can set any faction that you'd like to endlessly pursue you!
+
+⠀
+
+Pursuit will continue until the faction is destroyed, or you become non-hostile with the faction. If you become hostile to them, then pursuit will begin again, possibly with minimal warning!
+
+⠀
+
+There is a setting to make a faction "permanent hostile". This will reset the faction's goodwill to -100 every 12 in-game hours, forcing hostilities. Unfortunately, due to the way factions are defined, it isn't reasonably possible for this mod to make a faction truly permanently hostile (or to make a permanently hostile faction [i]not[/i] hostile). But this workaround should work well enough.
+
+⠀
+
+You can also change the type of raid that the faction will "pursue" you with. The default is RandomDrop. I haven't tested all the other raid types, so I don't know if any of them are broken with this scenario part. Test at your own peril.
+
+⠀
+
+As to why this mod exists, it all started with the "Pursuing Mechanoids" scenario part. To explain...
+	
+[h2]In base Odyssey,[/h2]
 
 there is a "Pursuing Mechanoids" scenario part that will cause the Mechanoids to assault your colony after 18-35 days, encouraging a nomadic playstyle. It was added for the Odyssey-specific gravship start, but you can technically add the scenario part to any scenario. Sounds cool, right?
 

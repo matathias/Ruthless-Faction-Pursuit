@@ -44,6 +44,9 @@ namespace RuthlessPursuingMechanoids
         private bool isFirstPeriod = false;
         private bool warningDisabled = false;
         private bool disableEndlessWaves = false;
+        private bool canDoNormalRaid = false;
+
+        public bool FactionCanNormalRaid => canDoNormalRaid;
 
         private int SecondRaidDelay => SecondWaveHours * GenDate.TicksPerHour;
 
@@ -90,9 +93,9 @@ namespace RuthlessPursuingMechanoids
         private int EndlessWavesHours = EndlessWavesHoursDef;
         private string ewhbuf;
         /* - - FACTION SETTINGS - - */
-        private Faction PursuitFaction = Faction.OfMechanoids;
-        private PawnsArrivalModeDef PursuitRaidType = PawnsArrivalModeDefOf.RandomDrop;
-        private bool PursuitFactionPermanentEnemy = true;
+        internal Faction PursuitFaction;
+        internal PawnsArrivalModeDef PursuitRaidType = PawnsArrivalModeDefOf.RandomDrop;
+        internal bool PursuitFactionPermanentEnemy = true;
         /*-*-*-*-*- END OPTIONS VALUES -*-*-*-*-*/
 
         private Map cachedAlertMap;
@@ -167,10 +170,11 @@ namespace RuthlessPursuingMechanoids
             Scribe_Values.Look(ref WarningDelayVarianceHours, "warningDelayVarianceHours", WarningDelayVarianceHoursDef);
             Scribe_Values.Look(ref SecondWaveHours, "secondWaveHours", SecondWaveHoursDef);
             Scribe_Values.Look(ref disableEndlessWaves, "disableEndlessWaves", defaultValue: false);
-            Scribe_Values.Look(ref PursuitFaction, "pursuitFaction", Faction.OfMechanoids);
             Scribe_Values.Look(ref PursuitRaidType, "pursuitRaidType", PawnsArrivalModeDefOf.RandomDrop);
             Scribe_Values.Look(ref PursuitFactionPermanentEnemy, "pursuitFactionPermanentEnemy", defaultValue: true);
             Scribe_Values.Look(ref pursuitFactionDef, "pursuitFactionDef", FactionDefOf.Mechanoid);
+            Scribe_Values.Look(ref PursuitFaction, "pursuitFaction", Faction.OfMechanoids);
+            Scribe_Values.Look(ref canDoNormalRaid, "canDoNormalRaid", defaultValue: false);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 if (mapWarningTimers == null)
@@ -182,66 +186,56 @@ namespace RuthlessPursuingMechanoids
                     mapRaidTimers = new Dictionary<Map, int>();
                 }
             }
-            PursuitFaction.def.permanentEnemy = PursuitFactionPermanentEnemy;
             SetupRanges();
             DebugLog(PrintFields());
         }
 
         public override void DoEditInterface(Listing_ScenEdit listing)
         {
-            float totalBaseHeight = 17f;
+            float totalBaseHeight = 14f;
             Rect scenPartRect = listing.GetScenPartRect(this, ScenPart.RowHeight * totalBaseHeight);
             float rowHeight = scenPartRect.height / totalBaseHeight;
             new Rect(scenPartRect.x, scenPartRect.y, scenPartRect.width, rowHeight);
-            Rect rect0 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight, scenPartRect.width, rowHeight);
-            Rect rect1 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 3f, scenPartRect.width, rowHeight);
-            Rect rect2 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 5f, scenPartRect.width, rowHeight);
-            Rect rect3 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 6f, scenPartRect.width, rowHeight);
-            Rect rect4 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 7f, scenPartRect.width, rowHeight);
-            Rect rect5 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 8f, scenPartRect.width, rowHeight);
-            Rect rect6 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 9f, scenPartRect.width, rowHeight);
-            Rect rect7 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 10f, scenPartRect.width, rowHeight);
-            Rect rect8 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 11f, scenPartRect.width, rowHeight);
-            Rect rect9 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 12f, scenPartRect.width, rowHeight);
-            Rect rect10 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 13f, scenPartRect.width, rowHeight);
-            Rect rect11 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 14f, scenPartRect.width, rowHeight);
-            Rect rect12 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 15f, scenPartRect.width, rowHeight);
-            Rect rect13 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 16f, scenPartRect.width, rowHeight);
+            Rect rect1 = new Rect(scenPartRect.x, scenPartRect.y, scenPartRect.width, rowHeight);
+            Rect rect2 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight, scenPartRect.width, rowHeight);
+            Rect rect3 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 2f, scenPartRect.width, rowHeight);
+            Rect rect4 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 3f, scenPartRect.width, rowHeight);
+            Rect rect5 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 4f, scenPartRect.width, rowHeight);
+            Rect rect6 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 5f, scenPartRect.width, rowHeight);
+            Rect rect7 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 6f, scenPartRect.width, rowHeight);
+            Rect rect8 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 7f, scenPartRect.width, rowHeight);
+            Rect rect9 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 8f, scenPartRect.width, rowHeight);
+            Rect rect10 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 9f, scenPartRect.width, rowHeight);
+            Rect rect11 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 10f, scenPartRect.width, rowHeight);
+            Rect rect12 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 11f, scenPartRect.width, rowHeight);
+            Rect rect13 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 12f, scenPartRect.width, rowHeight);
+            Rect rect14 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 13f, scenPartRect.width, rowHeight);
+            Rect rect15 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 14f, scenPartRect.width, rowHeight);
+            Rect rect16 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 15f, scenPartRect.width, rowHeight);
             /* -- Widgets for picking faction and raid type -- */
             /* Faction Picker */
-            Widgets.TextArea(rect0, "rpmFactionPicker".Translate(), true);
-            if (!Widgets.ButtonText(listing.GetScenPartRect(this, ScenPart.RowHeight), pursuitFactionDef.LabelCap))
+            if (Widgets.ButtonText(rect1, pursuitFactionDef.LabelCap))
             {
-                return;
-            }
-            List<FloatMenuOption> faclist = new List<FloatMenuOption>();
-            foreach (FactionDef item in DefDatabase<FactionDef>.AllDefs.Where((FactionDef d) => (!d.isPlayer && !d.raidsForbidden)))
-            {
-                FactionDef localFd = item;
-                faclist.Add(new FloatMenuOption(localFd.LabelCap, delegate
+                List<FloatMenuOption> faclist = new List<FloatMenuOption>();
+                foreach (FactionDef item in DefDatabase<FactionDef>.AllDefs.Where((FactionDef d) => (d.displayInFactionSelection && !d.isPlayer && d.canStageAttacks)))
                 {
-                    pursuitFactionDef = localFd;
-                }));
+                    FactionDef localFd = item;
+                    faclist.Add(new FloatMenuOption(localFd.LabelCap, delegate
+                    {
+                        pursuitFactionDef = localFd;
+                    }));
+                }
+                Find.WindowStack.Add(new FloatMenu(faclist));
             }
-            Find.WindowStack.Add(new FloatMenu(faclist));
-            /* Raid type picker */
-            Widgets.TextArea(rect1, "rpmRaidTypePicker".Translate(), true);
-            if (!Widgets.ButtonText(listing.GetScenPartRect(this, ScenPart.RowHeight), PursuitRaidType.LabelCap))
-            {
-                return;
-            }
-            List<FloatMenuOption> raidlist = new List<FloatMenuOption>();
-            foreach (PawnsArrivalModeDef item in DefDatabase<PawnsArrivalModeDef>.AllDefs.Where((PawnsArrivalModeDef d) => (d.minTechLevel <= pursuitFactionDef.techLevel)))
-            {
-                PawnsArrivalModeDef localPamd = item;
-                raidlist.Add(new FloatMenuOption(localPamd.LabelCap, delegate
-                {
-                    PursuitRaidType = localPamd;
-                }));
-            }
-            Find.WindowStack.Add(new FloatMenu(raidlist));
             /* Permanent enemy checkbox */
-            Widgets.CheckboxLabeled(rect2, "rpmPermanentEnemy".Translate(), ref PursuitFactionPermanentEnemy);
+            if (pursuitFactionDef.permanentEnemy)
+            {
+                Widgets.TextArea(rect2, "rpmPermanentEnemyTip".Translate(), true);
+            }
+            else
+            {
+                Widgets.CheckboxLabeled(rect2, "rpmPermanentEnemy".Translate(), ref PursuitFactionPermanentEnemy);
+            }
 
             /* -- Fields for setting the timers -- */
             // 14400 hours is ten rimyears. Should be plenty for a maximum bound
@@ -258,20 +252,21 @@ namespace RuthlessPursuingMechanoids
             Widgets.TextFieldNumericLabeled(rect11, "rpmSecondWaveHours".Translate(), ref SecondWaveHours, ref swhbuf, 1, 14400);
             Widgets.CheckboxLabeled(rect12, "rpmDisableEndless".Translate(), ref disableEndlessWaves);
             Widgets.TextFieldNumericLabeled(rect13, "rpmEndlessWaveHours".Translate(), ref EndlessWavesHours, ref ewhbuf, 1, 14400);
-        }
-
-        public override void PreConfigure()
-        {
-            base.PreConfigure();
-            pursuitFactionDef.permanentEnemy = PursuitFactionPermanentEnemy;
-            base.def.preventRemovalOfFaction = pursuitFactionDef;
-            base.def.maxUses = 1;
+            Widgets.CheckboxLabeled(rect14, "rpmNormalRaid".Translate(), ref canDoNormalRaid);
         }
 
         public override void PostWorldGenerate()
         {
             isFirstPeriod = true;
             PursuitFaction = Find.FactionManager.FirstFactionOfDef(pursuitFactionDef);
+            if (PursuitFaction != null && !pursuitFactionDef.permanentEnemy)
+            {
+                PursuitFaction.TryAffectGoodwillWith(Faction.OfPlayer, -200, false, false);
+                if (pursuitFactionDef.techLevel < PursuitRaidType.minTechLevel)
+                {
+                    PursuitRaidType = PawnsArrivalModeDefOf.EdgeWalkIn;
+                }
+            }
             SetupRanges();
             mapWarningTimers.Clear();
             mapRaidTimers.Clear();
@@ -323,10 +318,23 @@ namespace RuthlessPursuingMechanoids
                     MapRemoved(tmpMap);
                     continue;
                 }
+                /* You can technically edit the permanentEnemy field in a FactionDef during runtime, but that seems pretty ill-advised, since it changes the def
+                 * for the *entire game* until it's rebooted.
+                 * So instead, if the player has their pursuit faction set to 'permanent enemy', then we just reset the faction's goodwill to -100 every 12 in-game hours. */
+                /* We can't really do the reverse, though -- that is, if a faction is defined as a permanent enemy, then we can't just make them a not-permanent enemy
+                 * by futzing with goodwill. The player will have to rely on other mods to un-perma-enemy their factions. */
+                if (PursuitFactionPermanentEnemy && !pursuitFactionDef.permanentEnemy &&
+                    Find.TickManager.TicksGame % (TickInterval * 12) == 0)
+                {
+                    FactionRelation factionRelation = PursuitFaction.RelationWith(Faction.OfPlayer);
+                    int relationDecrease = -1 * (100 + factionRelation.baseGoodwill);
+                    PursuitFaction.TryAffectGoodwillWith(Faction.OfPlayer, relationDecrease, false);
+                    DebugLog($"reduced faction {PursuitFaction.Name}'s goodwill by {relationDecrease}");
+                }
 
                 if (Find.TickManager.TicksGame == TimerIntervalTick(mapWarningTimers[tmpMap]))
                 {
-                    if (PursuitFaction == Faction.OfMechanoids)
+                    if (pursuitFactionDef == FactionDefOf.Mechanoid)
                     {
                         Find.LetterStack.ReceiveLetter("LetterLabelMechanoidThreatRuthless".Translate(), "LetterTextMechanoidThreatRuthless".Translate(), LetterDefOf.ThreatSmall);
                     }
@@ -357,8 +365,8 @@ namespace RuthlessPursuingMechanoids
 
         private void StartTimers(Map map)
         {
-            if (!(map.info.parent is PocketMapParent) &&
-                !(PursuitFaction == Faction.OfMechanoids && map.generatorDef != MapGeneratorDefOf.Mechhive))
+            if (!(map.info.parent is PocketMapParent) && PursuitFaction != null &&
+                !(pursuitFactionDef == FactionDefOf.Mechanoid && map.generatorDef == MapGeneratorDefOf.Mechhive))
             {
                 if (isFirstPeriod)
                 {
@@ -378,15 +386,17 @@ namespace RuthlessPursuingMechanoids
         private bool UpdateDisabled()
         {
             if (PursuitFaction == null || PursuitFaction.deactivated || PursuitFaction.defeated || 
-                (!PursuitFaction.def.permanentEnemy && !FactionUtility.HostileTo(PursuitFaction, Faction.OfPlayer)))
+                (!pursuitFactionDef.permanentEnemy && !FactionUtility.HostileTo(PursuitFaction, Faction.OfPlayer)))
             {
+                if (!Disabled)
+                    DebugLog($"Disabling pursuit for faction {PursuitFaction?.Name ?? "null"}");
                 Disabled = true;
-                DebugLog($"Disabling pursuit for faction {PursuitFaction?.Name ?? "null"}");
             }
             else
             {
+                if (Disabled)
+                    DebugLog($"Enabling for faction {PursuitFaction?.Name ?? "null"}");
                 Disabled = false;
-                DebugLog($"Pursuit enabled for faction {PursuitFaction?.Name ?? "null"}");
             }
             return Disabled;
         }
@@ -432,15 +442,15 @@ namespace RuthlessPursuingMechanoids
         private string PrintFields()
         {
             StringBuilder output = new StringBuilder();
+            if (PursuitFaction == null)
+            {
+                output.Append($"Faction is NULL for specified faction {pursuitFactionDef.LabelCap}");
+                return output.ToString().Trim();
+            }
 
-            output.Append($"Pursuit Disabled: {Disabled}");
-            output.Append($" Pursuit Faction: {PursuitFaction.Name}");
-            output.Append($" Permanent Enemy: {PursuitFactionPermanentEnemy.ToString()}");
-            output.AppendLine($" Pursuit Raid Type: {PursuitRaidType.defName}");
-            output.Append($" isFirstPeriod: {isFirstPeriod}");
-            output.Append($" SecondWaveHours: {SecondWaveHours}");
-            output.Append($" disableEndlessWaves: {disableEndlessWaves}");
-            output.AppendLine($" EndlessWavesHours: {EndlessWavesHours}");
+            output.AppendLine($"Pursuit Disabled: {Disabled}");
+            output.AppendLine($"\tPursuit Faction: {PursuitFaction.Name} Permanent Enemy: {PursuitFactionPermanentEnemy} Pursuit Raid Type: {PursuitRaidType.defName} Can Normal Raid: {canDoNormalRaid}");
+            output.AppendLine($"\tisFirstPeriod: {isFirstPeriod}  SecondWaveHours: {SecondWaveHours}  disableEndlessWaves: {disableEndlessWaves} EndlessWavesHours: {EndlessWavesHours}");
             output.AppendLine($"\tFIRST RAID DELAY Mean: {FirstRaidDelayHours} Variance: {FirstRaidDelayVarianceHours} Range: ({FirstRaidDelayRange.min},{FirstRaidDelayRange.max})");
             output.AppendLine($"\tRAID DELAY Mean: {RaidDelayHours} Variance: {RaidDelayVarianceHours} Range: ({RaidDelayRange.min},{RaidDelayRange.max})");
             output.AppendLine($"\tWARNING DELAY Disabled: {warningDisabled} Mean: {WarningDelayHours} Variance: {WarningDelayVarianceHours} Range: ({WarningDelayRange.min},{WarningDelayRange.max})");
@@ -451,7 +461,7 @@ namespace RuthlessPursuingMechanoids
         {
             if (DebugLoggingEnabled)
             {
-                string output = "[Ruthless Pursuing Mechanoids] " + msg;
+                string output = "[Ruthless Faction Pursuit] " + msg;
                 Log.Message(output);
             }
         }

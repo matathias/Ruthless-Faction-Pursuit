@@ -2,6 +2,7 @@
 <LanguageData>
   <rpmFactionPicker>Endless Pursuit Faction:</rpmFactionPicker>
   <rpmRaidTypePicker>Pursuit Raid Type:</rpmRaidTypePicker>
+  <rpmPermanentEnemyTip>Faction Always Hostile</rpmPermanentEnemyTip>
   <rpmPermanentEnemy>Perma-Hostile Faction</rpmPermanentEnemy>
   <rpmTimeInHours>All values are in hours</rpmTimeInHours>
   <rpmFirstRaidMeanDelay>Initial Raid Delay</rpmFirstRaidMeanDelay>
@@ -14,4 +15,5 @@
   <rpmSecondWaveHours>Second Wave Delay</rpmSecondWaveHours>
   <rpmDisableEndless>Disable Endless Waves</rpmDisableEndless>
   <rpmEndlessWaveHours>Endless Waves Delay</rpmEndlessWaveHours>
+  <rpmNormalRaid>Normal Raid Candidate</rpmNormalRaid>
 </LanguageData>
