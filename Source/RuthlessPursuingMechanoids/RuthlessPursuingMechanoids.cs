@@ -184,14 +184,6 @@ namespace RuthlessPursuingMechanoids
                 {
                     mapRaidTimers = new Dictionary<Map, int>();
                 }
-                if (pursuitFactionDef == null)
-                {
-                    pursuitFactionDef = FactionDefOf.Mechanoid;
-                }
-                if (PursuitRaidType == null)
-                {
-                    PursuitRaidType = PawnsArrivalModeDefOf.RandomDrop;
-                }
                 PursuitFaction = Find.FactionManager.FirstFactionOfDef(pursuitFactionDef);
             }
             SetupRanges();
@@ -313,7 +305,7 @@ namespace RuthlessPursuingMechanoids
             tmpMaps.AddRange(mapWarningTimers.Keys);
             foreach (Map tmpMap in tmpMaps)
             {
-                if (UpdateDisabled())
+                if (UpdateDisabled(tmpMap))
                 {
                     /* This is where vanilla would block pursuit if you don't have a grav engine. */
                     mapWarningTimers.Remove(tmpMap);
@@ -336,8 +328,12 @@ namespace RuthlessPursuingMechanoids
                 {
                     FactionRelation factionRelation = PursuitFaction.RelationWith(Faction.OfPlayer);
                     int relationDecrease = -1 * (100 + factionRelation.baseGoodwill);
-                    PursuitFaction.TryAffectGoodwillWith(Faction.OfPlayer, relationDecrease, false);
-                    DebugLog($"reduced faction {PursuitFaction.Name}'s goodwill by {relationDecrease}");
+                    /* If relationDecrease is 0, then the faction's goodwill is already at -100. No need to futz with goodwill or send the player a message. */
+                    if (relationDecrease != 0)
+                    {
+                        PursuitFaction.TryAffectGoodwillWith(Faction.OfPlayer, relationDecrease);
+                        DebugLog($"reduced faction {PursuitFaction.Name}'s goodwill by {relationDecrease}");
+                    }
                 }
 
                 if (Find.TickManager.TicksGame == TimerIntervalTick(mapWarningTimers[tmpMap]))
@@ -396,19 +392,52 @@ namespace RuthlessPursuingMechanoids
             }
         }
 
-        private bool UpdateDisabled()
+        private bool UpdateDisabled(Map map)
         {
-            if (PursuitFaction == null || PursuitFaction.deactivated || PursuitFaction.defeated || 
+            if (PursuitFaction == null || PursuitFaction.deactivated || PursuitFaction.defeated ||
                 (!pursuitFactionDef.permanentEnemy && !FactionUtility.HostileTo(PursuitFaction, Faction.OfPlayer)))
             {
                 if (!Disabled)
+                {
                     DebugLog($"Disabling pursuit for faction {PursuitFaction?.Name ?? "null"}");
+                    if (PursuitFaction.deactivated || PursuitFaction.defeated)
+                    {
+                        /* Send letter saying the faction was defeated, and thus pursuit is ceasing */
+                        Find.LetterStack.ReceiveLetter("LetterLabelRuthlessFactionDefeated".Translate(PursuitFaction.NameColored), "LetterTextRuthlessFactionDefeated".Translate(PursuitFaction.NameColored), LetterDefOf.PositiveEvent);
+                    }
+                    else if (!pursuitFactionDef.permanentEnemy && !FactionUtility.HostileTo(PursuitFaction, Faction.OfPlayer))
+                    {
+                        /* Send letter saying that pursuit is ceasing due to improved faction relations */
+                        Find.LetterStack.ReceiveLetter("LetterLabelRuthlessPursuitStopped".Translate(PursuitFaction.NameColored), "LetterTextRuthlessPursuitStopped".Translate(PursuitFaction.NameColored), LetterDefOf.PositiveEvent);
+                    }
+                }
                 Disabled = true;
             }
             else
             {
                 if (Disabled)
-                    DebugLog($"Enabling for faction {PursuitFaction?.Name ?? "null"}");
+                {
+                    /* Timers get removed when Disabled is first set to TRUE. So when we're going to reset Disabled to FALSE, we need to restart the timers. */
+                    StartTimers(map);
+                    DebugLog($"Enabling pursuit for faction {PursuitFaction?.Name ?? "null"}");
+                    if (PursuitFaction != null && !pursuitFactionDef.permanentEnemy && FactionUtility.HostileTo(PursuitFaction, Faction.OfPlayer))
+                    {
+                        /* Send letter saying that pursuit is resuming due to degraded faction relations */
+                        Find.LetterStack.ReceiveLetter("LetterLabelRuthlessPursuitResumed".Translate(PursuitFaction.NameColored), "LetterTextRuthlessPursuitResumed".Translate(PursuitFaction.NameColored), LetterDefOf.ThreatSmall);
+                    }
+                    else if (PursuitFaction != null)
+                    {
+                        /* It *should* be that the only way we're *re*-enabling pursuit is if faction relations previously improved to neutral or above, and
+                         * then degraded back to hostile. It shouldn't be possible through normal gameplay for the deactivated or defeated fields
+                         * to turn TRUE after being set to FALSE. But just in case, we'll send a letter here. */
+                        Find.LetterStack.ReceiveLetter("LetterLabelRuthlessPursuitResumedFallback".Translate(PursuitFaction.NameColored), "LetterTextRuthlessPursuitResumedFallback".Translate(PursuitFaction.NameColored), LetterDefOf.ThreatSmall);
+                        DebugLog($"Unexpected pursuit re-enabling for faction {PursuitFaction.Name}. Deactivated: {PursuitFaction.deactivated} Defeated: {PursuitFaction.defeated}", LogMessageType.Warning);
+                    }
+                    else
+                    {
+                        DebugLog($"Enabled Ruthless Pursuit for NULL faction (how the hell did that happen??)", LogMessageType.Error);
+                    }
+                }
                 Disabled = false;
             }
             return Disabled;
@@ -470,12 +499,23 @@ namespace RuthlessPursuingMechanoids
 
             return output.ToString().Trim();
         }
-        private void DebugLog(string msg)
+        private void DebugLog(string msg, LogMessageType messageType = LogMessageType.Message)
         {
+            string output = "[Ruthless Faction Pursuit] " + msg;
             if (DebugLoggingEnabled)
             {
-                string output = "[Ruthless Faction Pursuit] " + msg;
-                Log.Message(output);
+                if (messageType == LogMessageType.Message)
+                {
+                    Log.Message(output);
+                }
+            }
+            else if (messageType == LogMessageType.Warning)
+            {
+                Log.Warning(output);
+            }
+            else if (messageType == LogMessageType.Error)
+            {
+                Log.Error(output);
             }
         }
     }
