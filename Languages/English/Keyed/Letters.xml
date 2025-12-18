@@ -12,8 +12,8 @@
   <LetterTextRuthlessPursuitResumed>Due to improved relations, the {0} faction will no longer send raids to pursue your colony. You can rest easy.\n\nHowever, while the {0} faction may forgive, they never forget. If relations ever return to hostile, they will resume their Ruthless Pursuit.</LetterTextRuthlessPursuitResumed>
   
   <LetterLabelRuthlessPursuitResumed>{0} Pursuit Resumed</LetterLabelRuthlessPursuitResumed>
-  <LetterTextRuthlessPursuitResumed>Due to degraded relations, the {0} faction is immediately resuming their Ruthless Pursuit of your colonies!</LetterTextRuthlessPursuitResumed>
+  <LetterTextRuthlessPursuitResumed>Due to degraded relations, the {0} faction is resuming their Ruthless Pursuit of your colonies!</LetterTextRuthlessPursuitResumed>
   
   <LetterLabelRuthlessPursuitResumedFallback>{0} Pursuit Resuming</LetterLabelRuthlessPursuitResumedFallback>
-  <LetterTextRuthlessPursuitResumedFallback>The {0} faction is immediately resuming their Ruthless Pursuit of your colonies!</LetterTextRuthlessPursuitResumedFallback>
+  <LetterTextRuthlessPursuitResumedFallback>The {0} faction is resuming their Ruthless Pursuit of your colonies!</LetterTextRuthlessPursuitResumedFallback>
 </LanguageData>

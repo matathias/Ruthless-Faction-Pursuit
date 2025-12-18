@@ -356,7 +356,7 @@ namespace RuthlessPursuingMechanoids
                     FireRaid_NewTemp(tmpMap, 2f, 8000f);
                 }
                 /* Vanilla seems to stop at the second raid. So, theoretically, if you beat both raids... you're home free? Seems too easy. Especially with mods.
-                 * So I added an endless mode. The mechanoids will *never* stop coming, not until you leave.
+                 * So I added an endless mode. The raids will *never* stop coming, not until you pack up and leave.
                  */
                 if (!disableEndlessWaves &&
                     Find.TickManager.TicksGame > TimerIntervalTick(mapRaidTimers[tmpMap] + SecondRaidDelay) &&
@@ -367,11 +367,12 @@ namespace RuthlessPursuingMechanoids
             }
         }
 
-        private void StartTimers(Map map)
+        private void StartTimers(Map map, bool forceMinimum = false)
         {
             /* If the raid type is EdgeWalkIn then don't start a timer if the map is in space. Not only is EdgeWalkIn not really valid for space maps, the poor bastards
              * would just suffocate and die. Not to mention that EdgeWalkIn factions wouldn't even have a way of reaching space! */
-            if (!(map.info.parent is PocketMapParent) &&
+            if (!Disabled &&
+                !(map.info.parent is PocketMapParent) &&
                 PursuitFaction != null &&
                 !(PursuitRaidType == PawnsArrivalModeDefOf.EdgeWalkIn && 
                   (map.generatorDef == MapGeneratorDefOf.OrbitalRelay || map.generatorDef == MapGeneratorDefOf.Space || map.generatorDef ==  MapGeneratorDefOf.SpacePocket)) &&
@@ -379,14 +380,14 @@ namespace RuthlessPursuingMechanoids
             {
                 if (isFirstPeriod)
                 {
-                    mapWarningTimers[map] = Find.TickManager.TicksGame + WarningDelayRange.RandomInRange;
-                    mapRaidTimers[map] = Find.TickManager.TicksGame + FirstRaidDelayRange.RandomInRange;
+                    mapWarningTimers[map] = Find.TickManager.TicksGame + (forceMinimum ? WarningDelayRange.min : WarningDelayRange.RandomInRange);
+                    mapRaidTimers[map] = Find.TickManager.TicksGame + (forceMinimum ? FirstRaidDelayRange.min : FirstRaidDelayRange.RandomInRange);
                     isFirstPeriod = false;
                 }
                 else
                 {
-                    mapWarningTimers[map] = Find.TickManager.TicksGame + WarningDelayRange.RandomInRange;
-                    mapRaidTimers[map] = Find.TickManager.TicksGame + RaidDelayRange.RandomInRange;
+                    mapWarningTimers[map] = Find.TickManager.TicksGame + (forceMinimum ? WarningDelayRange.min : WarningDelayRange.RandomInRange);
+                    mapRaidTimers[map] = Find.TickManager.TicksGame + (forceMinimum ? RaidDelayRange.min : RaidDelayRange.RandomInRange);
                 }
                 DebugLog($"Starting Timers for faction {PursuitFaction.Name} | Warning timer: {mapWarningTimers[map]} Raid timer: {mapRaidTimers[map]} Current Tick: {Find.TickManager.TicksGame}");
             }
@@ -418,8 +419,9 @@ namespace RuthlessPursuingMechanoids
                 if (Disabled)
                 {
                     /* Timers get removed when Disabled is first set to TRUE. So when we're going to reset Disabled to FALSE, we need to restart the timers. */
-                    StartTimers(map);
-                    DebugLog($"Enabling pursuit for faction {PursuitFaction?.Name ?? "null"}");
+                    /* Because we're mean, if the timers are started in this fashion, then we use the minimum delay for the warning alert and the pursuit raid itself */
+                    DebugLog($"Enabling pursuit for faction {PursuitFaction?.Name ?? "null"} with minimum timers");
+                    StartTimers(map, true);
                     if (PursuitFaction != null && !pursuitFactionDef.permanentEnemy && FactionUtility.HostileTo(PursuitFaction, Faction.OfPlayer))
                     {
                         /* Send letter saying that pursuit is resuming due to degraded faction relations */
@@ -427,7 +429,7 @@ namespace RuthlessPursuingMechanoids
                     }
                     else if (PursuitFaction != null)
                     {
-                        /* It *should* be that the only way we're *re*-enabling pursuit is if faction relations previously improved to neutral or above, and
+                        /* It *should* be that the only way we're re-enabling pursuit is if faction relations previously improved to neutral or above, and
                          * then degraded back to hostile. It shouldn't be possible through normal gameplay for the deactivated or defeated fields
                          * to turn TRUE after being set to FALSE. But just in case, we'll send a letter here. */
                         Find.LetterStack.ReceiveLetter("LetterLabelRuthlessPursuitResumedFallback".Translate(PursuitFaction.NameColored), "LetterTextRuthlessPursuitResumedFallback".Translate(PursuitFaction.NameColored), LetterDefOf.ThreatSmall);
