@@ -6,4 +6,6 @@
   <AlertPursuitThreatCritical>Incoming {0}</AlertPursuitThreatCritical>
   <AlertPursuitThreatCriticalDesc>The {0} faction has discovered your location. They will send multiple waves of hostiles.\n\nFlee the map before they arrive!</AlertPursuitThreatCriticalDesc>
   
+  <rpmMessagePermaEnemyFactionRelationsReset>Faction {0} is set to be permamently hostile. Reseting relations to -100.</rpmMessagePermaEnemyFactionRelationsReset>
+  
 </LanguageData>

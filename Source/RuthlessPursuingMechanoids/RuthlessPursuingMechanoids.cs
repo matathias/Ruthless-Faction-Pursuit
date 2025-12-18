@@ -328,7 +328,7 @@ namespace RuthlessPursuingMechanoids
                 /* If relationDecrease is 0, then the faction's goodwill is already at -100. No need to futz with goodwill or send the player a message. */
                 if (relationDecrease != 0)
                 {
-                    Messages.Message($"Faction {PursuitFaction.Name} is set to be permamently hostile. Reseting relations to -100.", GlobalTargetInfo.Invalid, MessageTypeDefOf.NegativeEvent);
+                    Messages.Message("rpmMessagePermaEnemyFactionRelationsReset".Translate(PursuitFaction.Name), GlobalTargetInfo.Invalid, MessageTypeDefOf.NegativeEvent);
                     PursuitFaction.TryAffectGoodwillWith(Faction.OfPlayer, relationDecrease);
                     DebugLog($"reduced faction {PursuitFaction.Name}'s goodwill by {relationDecrease}");
                 }
