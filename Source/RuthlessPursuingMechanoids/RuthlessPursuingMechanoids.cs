@@ -142,6 +142,8 @@ namespace RuthlessPursuingMechanoids
         }
 
         private bool Disabled = false;
+        private bool DisabledDueToRelations = false;
+        private bool ReenableDueToRelations = false;
 
         public override void ExposeData()
         {
@@ -160,6 +162,7 @@ namespace RuthlessPursuingMechanoids
             Scribe_Collections.Look(ref mapWarningTimers, "mapWarningTimers", LookMode.Reference, LookMode.Value, ref tmpWarningKeys, ref tmpWarningValues);
             Scribe_Collections.Look(ref mapRaidTimers, "mapRaidTimers", LookMode.Reference, LookMode.Value, ref tmpRaidKeys, ref tmpRaidValues);
             Scribe_Values.Look(ref Disabled, "disabled", defaultValue: false);
+            Scribe_Values.Look(ref DisabledDueToRelations, "disabledDueToRelations", defaultValue: false);
             Scribe_Values.Look(ref isFirstPeriod, "isFirstPeriod", defaultValue: false);
             Scribe_Values.Look(ref FirstRaidDelayHours, "firstRaidDelayHours", FirstRaidDelayHoursDef);
             Scribe_Values.Look(ref FirstRaidDelayVarianceHours, "firstRaidDelayVarianceHours", FirstRaidDelayVarianceHoursDef);
@@ -301,39 +304,51 @@ namespace RuthlessPursuingMechanoids
             {
                 return;
             }
+            UpdateDisabled();
             tmpMaps.Clear();
             tmpMaps.AddRange(mapWarningTimers.Keys);
+            /* You can technically edit the permanentEnemy field in a FactionDef during runtime, but that seems pretty ill-advised, since it changes the def
+             * for the *entire game* until it's rebooted.
+             * So instead, if the player has their pursuit faction set to 'permanent enemy', then we just reset the faction's goodwill to -100 every 12 in-game hours. */
+            /* We can't really do the reverse, though -- that is, if a faction is defined as a permanent enemy, then we can't just make them a not-permanent enemy
+             * by futzing with goodwill. The player will have to rely on other mods to un-perma-enemy their factions. */
+            if (!Disabled && PursuitFactionPermanentEnemy && !pursuitFactionDef.permanentEnemy &&
+                Find.TickManager.TicksGame % (TickInterval * 12) == 0)
+            {
+                FactionRelation factionRelation = PursuitFaction.RelationWith(Faction.OfPlayer);
+                int relationDecrease = -1 * (100 + factionRelation.baseGoodwill);
+                /* If relationDecrease is 0, then the faction's goodwill is already at -100. No need to futz with goodwill or send the player a message. */
+                if (relationDecrease != 0)
+                {
+                    PursuitFaction.TryAffectGoodwillWith(Faction.OfPlayer, relationDecrease);
+                    DebugLog($"reduced faction {PursuitFaction.Name}'s goodwill by {relationDecrease}");
+                }
+            }
             foreach (Map tmpMap in tmpMaps)
             {
-                if (UpdateDisabled(tmpMap))
+                if (Disabled)
                 {
                     /* This is where vanilla would block pursuit if you don't have a grav engine. */
-                    mapWarningTimers.Remove(tmpMap);
-                    mapRaidTimers.Remove(tmpMap);
+                    /* If pursuit is disabled due to relations, then don't remove the timers. Leaving them means we can access the map
+                     * later, to restart the timers if relations degrade. */
+                    if (!DisabledDueToRelations)
+                    {
+                        mapWarningTimers.Remove(tmpMap);
+                        mapRaidTimers.Remove(tmpMap);
+                    }
                     continue;
+                }
+                else if (ReenableDueToRelations)
+                {
+                    /* Restart the timers with minimum values */
+                    DebugLog($"Restarting timers for faction {PursuitFaction?.Name ?? "null"} with minimum timers");
+                    StartTimers(tmpMap, true);
                 }
                 /* This if clause only exists to wipe out pocket map timers that were added before the pocket map timer bug was fixed. */
                 if (tmpMap.info.parent is PocketMapParent)
                 {
                     MapRemoved(tmpMap);
                     continue;
-                }
-                /* You can technically edit the permanentEnemy field in a FactionDef during runtime, but that seems pretty ill-advised, since it changes the def
-                 * for the *entire game* until it's rebooted.
-                 * So instead, if the player has their pursuit faction set to 'permanent enemy', then we just reset the faction's goodwill to -100 every 12 in-game hours. */
-                /* We can't really do the reverse, though -- that is, if a faction is defined as a permanent enemy, then we can't just make them a not-permanent enemy
-                 * by futzing with goodwill. The player will have to rely on other mods to un-perma-enemy their factions. */
-                if (PursuitFactionPermanentEnemy && !pursuitFactionDef.permanentEnemy &&
-                    Find.TickManager.TicksGame % (TickInterval * 12) == 0)
-                {
-                    FactionRelation factionRelation = PursuitFaction.RelationWith(Faction.OfPlayer);
-                    int relationDecrease = -1 * (100 + factionRelation.baseGoodwill);
-                    /* If relationDecrease is 0, then the faction's goodwill is already at -100. No need to futz with goodwill or send the player a message. */
-                    if (relationDecrease != 0)
-                    {
-                        PursuitFaction.TryAffectGoodwillWith(Faction.OfPlayer, relationDecrease);
-                        DebugLog($"reduced faction {PursuitFaction.Name}'s goodwill by {relationDecrease}");
-                    }
                 }
 
                 if (Find.TickManager.TicksGame == TimerIntervalTick(mapWarningTimers[tmpMap]))
@@ -365,6 +380,10 @@ namespace RuthlessPursuingMechanoids
                     FireRaid_NewTemp(tmpMap, 2f, 10000f);
                 }
             }
+            if (ReenableDueToRelations)
+            {
+                ReenableDueToRelations = false;
+            }
         }
 
         private void StartTimers(Map map, bool forceMinimum = false)
@@ -389,11 +408,11 @@ namespace RuthlessPursuingMechanoids
                     mapWarningTimers[map] = Find.TickManager.TicksGame + (forceMinimum ? WarningDelayRange.min : WarningDelayRange.RandomInRange);
                     mapRaidTimers[map] = Find.TickManager.TicksGame + (forceMinimum ? RaidDelayRange.min : RaidDelayRange.RandomInRange);
                 }
-                DebugLog($"Starting Timers for faction {PursuitFaction.Name} | Warning timer: {mapWarningTimers[map]} Raid timer: {mapRaidTimers[map]} Current Tick: {Find.TickManager.TicksGame}");
+                DebugLog($"Starting Timers for faction {PursuitFaction.Name} | Warning timer: {mapWarningTimers[map]} Raid timer: {mapRaidTimers[map]} Current Tick: {Find.TickManager.TicksGame} Force Minimum: {forceMinimum}");
             }
         }
 
-        private bool UpdateDisabled(Map map)
+        private bool UpdateDisabled()
         {
             if (PursuitFaction == null || PursuitFaction.deactivated || PursuitFaction.defeated ||
                 (!pursuitFactionDef.permanentEnemy && !FactionUtility.HostileTo(PursuitFaction, Faction.OfPlayer)))
@@ -409,6 +428,7 @@ namespace RuthlessPursuingMechanoids
                     else if (!pursuitFactionDef.permanentEnemy && !FactionUtility.HostileTo(PursuitFaction, Faction.OfPlayer))
                     {
                         /* Send letter saying that pursuit is ceasing due to improved faction relations */
+                        DisabledDueToRelations = true;
                         Find.LetterStack.ReceiveLetter("LetterLabelRuthlessPursuitStopped".Translate(PursuitFaction.NameColored), "LetterTextRuthlessPursuitStopped".Translate(PursuitFaction.NameColored), LetterDefOf.PositiveEvent);
                     }
                 }
@@ -418,28 +438,30 @@ namespace RuthlessPursuingMechanoids
             {
                 if (Disabled)
                 {
-                    /* Timers get removed when Disabled is first set to TRUE. So when we're going to reset Disabled to FALSE, we need to restart the timers. */
-                    /* Because we're mean, if the timers are started in this fashion, then we use the minimum delay for the warning alert and the pursuit raid itself */
-                    DebugLog($"Enabling pursuit for faction {PursuitFaction?.Name ?? "null"} with minimum timers");
-                    StartTimers(map, true);
+                    DebugLog($"Enabling pursuit for faction {PursuitFaction?.Name ?? "null"}");
                     if (PursuitFaction != null && !pursuitFactionDef.permanentEnemy && FactionUtility.HostileTo(PursuitFaction, Faction.OfPlayer))
                     {
                         /* Send letter saying that pursuit is resuming due to degraded faction relations */
+                        ReenableDueToRelations = true;
                         Find.LetterStack.ReceiveLetter("LetterLabelRuthlessPursuitResumed".Translate(PursuitFaction.NameColored), "LetterTextRuthlessPursuitResumed".Translate(PursuitFaction.NameColored), LetterDefOf.ThreatSmall);
                     }
                     else if (PursuitFaction != null)
                     {
                         /* It *should* be that the only way we're re-enabling pursuit is if faction relations previously improved to neutral or above, and
                          * then degraded back to hostile. It shouldn't be possible through normal gameplay for the deactivated or defeated fields
-                         * to turn TRUE after being set to FALSE. But just in case, we'll send a letter here. */
-                        Find.LetterStack.ReceiveLetter("LetterLabelRuthlessPursuitResumedFallback".Translate(PursuitFaction.NameColored), "LetterTextRuthlessPursuitResumedFallback".Translate(PursuitFaction.NameColored), LetterDefOf.ThreatSmall);
+                         * to turn TRUE after being set to FALSE. But just in case we do hit that case, we'll log a warning message. */
+                        /* NOTE: in this case, it is likely that all of the current maps will have been wiped of raid timers. We *could* grab all of the
+                         * current maps and re-add timers... but since this case shouldn't ever be reached under normal operation, I think it's best to leave it
+                         * code-lite. Timers will be applied to any new maps made after this point, anyways. */
                         DebugLog($"Unexpected pursuit re-enabling for faction {PursuitFaction.Name}. Deactivated: {PursuitFaction.deactivated} Defeated: {PursuitFaction.defeated}", LogMessageType.Warning);
                     }
                     else
                     {
+                        /* It should be LITERALLY logically impossible to reach this case. I'm including it only for completeness. */
                         DebugLog($"Enabled Ruthless Pursuit for NULL faction (how the hell did that happen??)", LogMessageType.Error);
                     }
                 }
+                DisabledDueToRelations = false;
                 Disabled = false;
             }
             return Disabled;
