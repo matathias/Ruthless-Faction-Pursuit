@@ -537,9 +537,9 @@ namespace RuthlessPursuingMechanoids
         private void DebugLog(string msg, LogMessageType messageType = LogMessageType.Message)
         {
             string output = "[Ruthless Faction Pursuit] " + msg;
-            if (DebugLoggingEnabled)
+            if (messageType == LogMessageType.Message)
             {
-                if (messageType == LogMessageType.Message)
+                if (DebugLoggingEnabled)
                 {
                     Log.Message(output);
                 }
