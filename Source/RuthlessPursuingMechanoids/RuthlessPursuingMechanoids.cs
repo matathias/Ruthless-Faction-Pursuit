@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Verse;
 using Verse.Noise;
+using static HarmonyLib.Code;
 
 namespace RuthlessPursuingMechanoids
 {
@@ -95,10 +96,12 @@ namespace RuthlessPursuingMechanoids
         private string ewhbuf;
         /* - - FACTION SETTINGS - - */
         internal Faction PursuitFaction = null;
-        internal string PursuitFactionName = "";
-        internal PawnsArrivalModeDef PursuitRaidType = PawnsArrivalModeDefOf.RandomDrop;
-        internal bool PursuitFactionPermanentEnemy = true;
+        private string PursuitFactionName = "";
+        private PawnsArrivalModeDef PursuitRaidType = PawnsArrivalModeDefOf.RandomDrop;
+        private bool PursuitFactionPermanentEnemy = true;
         /*-*-*-*-*- END OPTIONS VALUES -*-*-*-*-*/
+
+        public string FactionName => PursuitFactionName;
 
         private Map cachedAlertMap;
 
@@ -156,6 +159,25 @@ namespace RuthlessPursuingMechanoids
         private bool ReenableDueToRelations = false;
         private bool FactionIsPermanentEnemy => pursuitFactionDef.permanentEnemy || PursuitFactionPermanentEnemy;
 
+        public ScenPart_RuthlessPursuingMechanoids(FactionDef pfd, string pfn, bool permaEnemy, bool sh, int frdh, int frdvh, int rdh, int rdvh,
+                                                   bool wd, int wdh, int wdvh, int swh, bool dew, int ewh, bool cdnr)
+        {
+            pursuitFactionDef = pfd;
+            PursuitFactionName = pfn;
+            PursuitFactionPermanentEnemy = permaEnemy;
+            startHostile = sh;
+            FirstRaidDelayHours = frdh;
+            FirstRaidDelayVarianceHours = frdvh;
+            RaidDelayHours = rdh;
+            RaidDelayVarianceHours = rdvh;
+            warningDisabled = wd;
+            WarningDelayHours = wdh;
+            WarningDelayVarianceHours = wdvh;
+            SecondWaveHours = swh;
+            disableEndlessWaves = dew;
+            EndlessWavesHours = ewh;
+            canDoNormalRaid = cdnr;
+        }
         public override void ExposeData()
         {
             base.ExposeData();
@@ -199,26 +221,10 @@ namespace RuthlessPursuingMechanoids
                 {
                     mapRaidTimers = new Dictionary<Map, int>();
                 }
-                if (!PursuitFactionName.NullOrEmpty() && PursuitFaction == null)
-                {
-                    foreach (Faction tmpfac in Find.FactionManager.GetFactions(false, true, true))
-                    {
-                        if (tmpfac.HasName && tmpfac.Name == PursuitFactionName)
-                        {
-                            PursuitFaction = tmpfac;
-                            break;
-                        }
-                    }
-                }
-                if (PursuitFaction == null)
-                {
-                    /* If there's no saved name, or the saved name is invalid, then we'll fall back on finding the first faction that matches the faction def.
-                     * Present mostly for backwards compatibility with saves from before this change. */
-                    PursuitFaction = Find.FactionManager.FirstFactionOfDef(pursuitFactionDef);
-                }
+                SetFaction();
             }
             SetupRanges();
-            DebugLog(PrintFields());
+            DebugLog(PrintFields() + $"\n\tLoadSaveMode {Scribe.mode}");
         }
 
         public override void DoEditInterface(Listing_ScenEdit listing)
@@ -290,6 +296,89 @@ namespace RuthlessPursuingMechanoids
             Widgets.CheckboxLabeled(rect15, "rpmNormalRaid".Translate(), ref canDoNormalRaid);
         }
 
+        private void SetFaction()
+        {
+            /* If we already have the faction's name (such as if this scenpart was added through Omni Pursuit, or after load), then find the faction
+             * with that name. Otherwise, go by def. */
+            if (!PursuitFactionName.NullOrEmpty() && PursuitFaction == null)
+            {
+                foreach (Faction tmpfac in Find.FactionManager.GetFactions(false, true, true))
+                {
+                    if (tmpfac.def == pursuitFactionDef && tmpfac.HasName && tmpfac.Name == PursuitFactionName)
+                    {
+                        PursuitFaction = tmpfac;
+                        DebugLog($" [SetFaction] Found faction for name {PursuitFactionName}");
+                        break;
+                    }
+                }
+            }
+            if (PursuitFaction == null)
+            {
+                /* If there's no saved name, or the saved name is invalid, then we'll fall back on finding the first faction that matches the faction def. */
+                /* If There are multiple factions with this def, then find a faction that isn't already assigned to a Ruthless Pursuit ScenPart. If all
+                 * factions are already assigned, then we move on without doing anything. */
+                List<Faction> facList = Find.FactionManager.AllFactions.Where((Faction f) => f.def == pursuitFactionDef).ToList();
+                DebugLog($" [SetFaction] Found {facList.Count()} factions of def {pursuitFactionDef.LabelCap}");
+                if (facList.Count() == 1)
+                {
+                    PursuitFaction = Find.FactionManager.FirstFactionOfDef(pursuitFactionDef);
+                }
+                else if (facList.Count() > 1)
+                {
+                    List<ScenPart_RuthlessPursuingMechanoids> pursuitScenParts = Find.Scenario.AllParts.OfType<ScenPart_RuthlessPursuingMechanoids>().ToList();
+                    foreach (Faction f in facList)
+                    {
+                        bool foundInScenPart = false;
+                        foreach (ScenPart_RuthlessPursuingMechanoids part in pursuitScenParts)
+                        {
+                            if (part.FactionName == f.Name)
+                            {
+                                foundInScenPart = true;
+                                break;
+                            }
+                        }
+                        if (!foundInScenPart)
+                        {
+                            PursuitFaction = f;
+                            break;
+                        }
+                    }
+                    /* If PursuitFaction is still NULL at this point, then it means that every faction of def pursuitFactionDef has already been assigned
+                     * to a Ruthless Pursuit ScenPart. We *could* assign a second part to a random faction, but that seems a little odd to do. So for now,
+                     * we'll just leave PursuitFaction as NULL, meaning that this particular scenPart won't actually be doing anything. */
+                }
+                /* PursuitFaciton being NULL here could mean that there are *no* factions with def pursuitFactionDef. In which case, we... should
+                 * also do nothing. */
+                /* This following code is purely for debugging/logging */
+                if (PursuitFaction == null)
+                {
+                    if (facList.Count() > 0)
+                    {
+                        DebugLog($" [SetFaction] found {facList.Count()} faction(s) of def {pursuitFactionDef.LabelCap}, but all were already assigned", LogMessageType.Warning);
+                    }
+                    else
+                    {
+                        DebugLog($" [SetFaction] found no factions of def {pursuitFactionDef.LabelCap}", LogMessageType.Warning);
+                    }
+                }
+                else
+                {
+                    DebugLog($" [SetFaction] assigned faction {PursuitFaction.Name}");
+                }
+            }
+
+            if (PursuitFactionName.NullOrEmpty())
+            {
+                PursuitFactionName = PursuitFaction?.Name ?? "null faction";
+            }
+            else if (PursuitFaction != null && PursuitFactionName != PursuitFaction.Name)
+            {
+                DebugLog($" [SetFaction] mismatch between saved PursuitFactionName {PursuitFactionName} and assigned Faction's name {PursuitFaction.Name}. Setting PursuitFactionName to Faction's name.",
+                         LogMessageType.Error);
+                PursuitFactionName = PursuitFaction.Name;
+            }
+        }
+
         public override void PostWorldGenerate()
         {
             isFirstPeriod = true;
@@ -299,12 +388,12 @@ namespace RuthlessPursuingMechanoids
             {
                 PursuitRaidType = PawnsArrivalModeDefOf.EdgeWalkIn;
             }
-            PursuitFaction = Find.FactionManager.FirstFactionOfDef(pursuitFactionDef);
+            SetFaction();
+
             if (PursuitFaction != null && !pursuitFactionDef.permanentEnemy && (PursuitFactionPermanentEnemy || startHostile))
             {
                 PursuitFaction.TryAffectGoodwillWith(Faction.OfPlayer, -200, false, false);
             }
-            PursuitFactionName = PursuitFaction?.Name ?? "null faction";
             SetupRanges();
             mapWarningTimers.Clear();
             mapRaidTimers.Clear();
@@ -581,6 +670,15 @@ namespace RuthlessPursuingMechanoids
             {
                 Log.Error(output);
             }
+        }
+        public override bool CanCoexistWith(ScenPart other)
+        {
+            if (other is ScenPart_RuthlessOmniPursuit)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 

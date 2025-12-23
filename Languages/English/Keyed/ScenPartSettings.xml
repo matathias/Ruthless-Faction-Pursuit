@@ -17,4 +17,7 @@
   <rpmDisableEndless>Disable Endless Waves</rpmDisableEndless>
   <rpmEndlessWaveHours>Endless Waves Delay</rpmEndlessWaveHours>
   <rpmNormalRaid>Normal Raid Candidate</rpmNormalRaid>
+  
+  <rpmPermanentEnemies>Perma-Hostile Factions</rpmPermanentEnemies>
+  <rpmStartHostiles>Start Hostile</rpmStartHostiles>
 </LanguageData>

@@ -58,6 +58,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HarmonyPatches.cs" />
+    <Compile Include="RuthlessOmniPursuit.cs" />
     <Compile Include="RuthlessPursuingMechanoids.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
