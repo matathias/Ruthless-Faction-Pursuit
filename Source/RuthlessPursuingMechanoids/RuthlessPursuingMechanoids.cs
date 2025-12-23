@@ -94,6 +94,7 @@ namespace RuthlessPursuingMechanoids
         private string ewhbuf;
         /* - - FACTION SETTINGS - - */
         internal Faction PursuitFaction = null;
+        internal string PursuitFactionName = "";
         internal PawnsArrivalModeDef PursuitRaidType = PawnsArrivalModeDefOf.RandomDrop;
         internal bool PursuitFactionPermanentEnemy = true;
         /*-*-*-*-*- END OPTIONS VALUES -*-*-*-*-*/
@@ -186,6 +187,7 @@ namespace RuthlessPursuingMechanoids
             Scribe_Values.Look(ref PursuitFactionPermanentEnemy, "pursuitFactionPermanentEnemy", defaultValue: true);
             Scribe_Defs.Look(ref pursuitFactionDef, "pursuitFactionDef");
             Scribe_Values.Look(ref canDoNormalRaid, "canDoNormalRaid", defaultValue: false);
+            Scribe_Values.Look(ref PursuitFactionName, "pursuitFactionName", "");
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 if (mapWarningTimers == null)
@@ -196,7 +198,23 @@ namespace RuthlessPursuingMechanoids
                 {
                     mapRaidTimers = new Dictionary<Map, int>();
                 }
-                PursuitFaction = Find.FactionManager.FirstFactionOfDef(pursuitFactionDef);
+                if (!PursuitFactionName.NullOrEmpty() && PursuitFaction == null)
+                {
+                    foreach (Faction tmpfac in Find.FactionManager.GetFactions(false, true, true))
+                    {
+                        if (tmpfac.HasName && tmpfac.Name == PursuitFactionName)
+                        {
+                            PursuitFaction = tmpfac;
+                            break;
+                        }
+                    }
+                }
+                if (PursuitFaction == null)
+                {
+                    /* If there's no saved name, or the saved name is invalid, then we'll fall back on finding the first faction that matches the faction def.
+                     * Present mostly for backwards compatibility with saves from before this change. */
+                    PursuitFaction = Find.FactionManager.FirstFactionOfDef(pursuitFactionDef);
+                }
             }
             SetupRanges();
             DebugLog(PrintFields());
@@ -279,6 +297,7 @@ namespace RuthlessPursuingMechanoids
                     PursuitRaidType = PawnsArrivalModeDefOf.EdgeWalkIn;
                 }
             }
+            PursuitFactionName = PursuitFaction?.Name ?? "null faction";
             SetupRanges();
             mapWarningTimers.Clear();
             mapRaidTimers.Clear();
