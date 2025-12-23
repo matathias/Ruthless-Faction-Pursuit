@@ -434,8 +434,11 @@ namespace RuthlessPursuingMechanoids
                 if (isFirstPeriod)
                 {
                     /* It seems that we don't actually call into the Tick function at Tick 0. Which means that the first tick we check is actually TickInterval.
-                     * So to make sure warning letters are set properly, we set TickInterval to be the earliest tick a warning or raid can occur at. */
-                    mapWarningTimers[map] = Find.TickManager.TicksGame + Math.Max((forceMinimum ? WarningDelayRange.min : WarningDelayRange.RandomInRange), TickInterval);
+                     * So to make sure warning letters are sent properly, we set TickInterval to be the earliest tick a warning or raid can occur at. */
+                    int warningDelayAbsolute = Math.Max(FirstRaidDelayHours - WarningDelayHours, 0);
+                    IntRange tmpWarningDelayRange = new IntRange(Math.Max(warningDelayAbsolute - WarningDelayVarianceHours, 0) * GenDate.TicksPerHour,
+                                                                         (warningDelayAbsolute + WarningDelayVarianceHours) * GenDate.TicksPerHour);
+                    mapWarningTimers[map] = Find.TickManager.TicksGame + Math.Max((forceMinimum ? tmpWarningDelayRange.min : tmpWarningDelayRange.RandomInRange), TickInterval);
                     mapRaidTimers[map] = Find.TickManager.TicksGame + Math.Max((forceMinimum ? FirstRaidDelayRange.min : FirstRaidDelayRange.RandomInRange), TickInterval);
                     isFirstPeriod = false;
                 }
@@ -552,7 +555,7 @@ namespace RuthlessPursuingMechanoids
             }
 
             output.AppendLine($"Pursuit Disabled: {Disabled}");
-            output.AppendLine($"\tPursuit Faction: {PursuitFaction.Name} Permanent Enemy: {PursuitFactionPermanentEnemy} Pursuit Raid Type: {PursuitRaidType.defName} Can Normal Raid: {canDoNormalRaid}");
+            output.AppendLine($"\tPursuit Faction: {PursuitFaction.Name} (Saved Name: {PursuitFactionName}) Permanent Enemy: {PursuitFactionPermanentEnemy} Pursuit Raid Type: {PursuitRaidType.defName} Can Normal Raid: {canDoNormalRaid}");
             output.AppendLine($"\tisFirstPeriod: {isFirstPeriod}  SecondWaveHours: {SecondWaveHours}  disableEndlessWaves: {disableEndlessWaves} EndlessWavesHours: {EndlessWavesHours}");
             output.AppendLine($"\tFIRST RAID DELAY Mean: {FirstRaidDelayHours} Variance: {FirstRaidDelayVarianceHours} Range: ({FirstRaidDelayRange.min},{FirstRaidDelayRange.max})");
             output.AppendLine($"\tRAID DELAY Mean: {RaidDelayHours} Variance: {RaidDelayVarianceHours} Range: ({RaidDelayRange.min},{RaidDelayRange.max})");
