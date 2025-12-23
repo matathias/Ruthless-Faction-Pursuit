@@ -4,6 +4,7 @@
   <rpmRaidTypePicker>Pursuit Raid Type:</rpmRaidTypePicker>
   <rpmPermanentEnemyTip>Faction Always Hostile</rpmPermanentEnemyTip>
   <rpmPermanentEnemy>Perma-Hostile Faction</rpmPermanentEnemy>
+  <rpmStartHostile>Starts Hostile</rpmStartHostile>
   <rpmTimeInHours>All values are in hours</rpmTimeInHours>
   <rpmFirstRaidMeanDelay>Initial Raid Delay</rpmFirstRaidMeanDelay>
   <rpmFirstRaidMeanDelayVariance>Initial Raid Variance</rpmFirstRaidMeanDelayVariance>

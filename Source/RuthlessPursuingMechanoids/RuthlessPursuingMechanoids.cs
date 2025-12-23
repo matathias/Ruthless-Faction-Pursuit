@@ -45,6 +45,7 @@ namespace RuthlessPursuingMechanoids
         private bool warningDisabled = false;
         private bool disableEndlessWaves = false;
         private bool canDoNormalRaid = false;
+        private bool startHostile = true;
 
         public bool FactionCanNormalRaid => canDoNormalRaid;
 
@@ -222,7 +223,7 @@ namespace RuthlessPursuingMechanoids
 
         public override void DoEditInterface(Listing_ScenEdit listing)
         {
-            float totalBaseHeight = 14f;
+            float totalBaseHeight = 15f;
             Rect scenPartRect = listing.GetScenPartRect(this, ScenPart.RowHeight * totalBaseHeight);
             float rowHeight = scenPartRect.height / totalBaseHeight;
             new Rect(scenPartRect.x, scenPartRect.y, scenPartRect.width, rowHeight);
@@ -265,37 +266,43 @@ namespace RuthlessPursuingMechanoids
             else
             {
                 Widgets.CheckboxLabeled(rect2, "rpmPermanentEnemy".Translate(), ref PursuitFactionPermanentEnemy);
+                if (!PursuitFactionPermanentEnemy)
+                {
+                    Widgets.CheckboxLabeled(rect3, "rpmStartHostile".Translate(), ref startHostile);
+                }
             }
 
             /* -- Fields for setting the timers -- */
             // 14400 hours is ten rimyears. Should be plenty for a maximum bound
             // The minimum value for all raid delays is 1 hour. If it were 0, then we could hit some infinite loop shit
             //   1 hour is pretty fucking low, probably unplayably low in most cases. But if the user really wants to fuck themselves, then why not let them?
-            Widgets.TextArea(rect3, "rpmTimeInHours".Translate(), true);
-            Widgets.TextFieldNumericLabeled(rect4, "rpmFirstRaidMeanDelay".Translate(), ref FirstRaidDelayHours, ref frdhbuf, 1, 14400);
-            Widgets.TextFieldNumericLabeled(rect5, "rpmFirstRaidMeanDelayVariance".Translate(), ref FirstRaidDelayVarianceHours, ref frdvhbuf, 0, 14400);
-            Widgets.TextFieldNumericLabeled(rect6, "rpmRaidMeanDelay".Translate(), ref RaidDelayHours, ref rdhbuf, 1, 14400);
-            Widgets.TextFieldNumericLabeled(rect7, "rpmRaidMeanDelayVariance".Translate(), ref RaidDelayVarianceHours, ref rdvhbuf, 0, 14400);
-            Widgets.CheckboxLabeled(rect8, "rpmWarningDisabled".Translate(), ref warningDisabled);
-            Widgets.TextFieldNumericLabeled(rect9, "rpmWarningMeanDelay".Translate(), ref WarningDelayHours, ref wdhbuf, 0, 14400);
-            Widgets.TextFieldNumericLabeled(rect10, "rpmWarningMeanDelayVariance".Translate(), ref WarningDelayVarianceHours, ref wdvhbuf, 0, 14400);
-            Widgets.TextFieldNumericLabeled(rect11, "rpmSecondWaveHours".Translate(), ref SecondWaveHours, ref swhbuf, 1, 14400);
-            Widgets.CheckboxLabeled(rect12, "rpmDisableEndless".Translate(), ref disableEndlessWaves);
-            Widgets.TextFieldNumericLabeled(rect13, "rpmEndlessWaveHours".Translate(), ref EndlessWavesHours, ref ewhbuf, 1, 14400);
-            Widgets.CheckboxLabeled(rect14, "rpmNormalRaid".Translate(), ref canDoNormalRaid);
+            Widgets.TextArea(rect4, "rpmTimeInHours".Translate(), true);
+            Widgets.TextFieldNumericLabeled(rect5, "rpmFirstRaidMeanDelay".Translate(), ref FirstRaidDelayHours, ref frdhbuf, 1, 14400);
+            Widgets.TextFieldNumericLabeled(rect6, "rpmFirstRaidMeanDelayVariance".Translate(), ref FirstRaidDelayVarianceHours, ref frdvhbuf, 0, 14400);
+            Widgets.TextFieldNumericLabeled(rect7, "rpmRaidMeanDelay".Translate(), ref RaidDelayHours, ref rdhbuf, 1, 14400);
+            Widgets.TextFieldNumericLabeled(rect8, "rpmRaidMeanDelayVariance".Translate(), ref RaidDelayVarianceHours, ref rdvhbuf, 0, 14400);
+            Widgets.CheckboxLabeled(rect9, "rpmWarningDisabled".Translate(), ref warningDisabled);
+            Widgets.TextFieldNumericLabeled(rect10, "rpmWarningMeanDelay".Translate(), ref WarningDelayHours, ref wdhbuf, 0, 14400);
+            Widgets.TextFieldNumericLabeled(rect11, "rpmWarningMeanDelayVariance".Translate(), ref WarningDelayVarianceHours, ref wdvhbuf, 0, 14400);
+            Widgets.TextFieldNumericLabeled(rect12, "rpmSecondWaveHours".Translate(), ref SecondWaveHours, ref swhbuf, 1, 14400);
+            Widgets.CheckboxLabeled(rect13, "rpmDisableEndless".Translate(), ref disableEndlessWaves);
+            Widgets.TextFieldNumericLabeled(rect14, "rpmEndlessWaveHours".Translate(), ref EndlessWavesHours, ref ewhbuf, 1, 14400);
+            Widgets.CheckboxLabeled(rect15, "rpmNormalRaid".Translate(), ref canDoNormalRaid);
         }
 
         public override void PostWorldGenerate()
         {
             isFirstPeriod = true;
+            /* If the faction doesn't have the tech level for transport pods, then set them to raid through EdgeWalkIn instead.
+             * This will also block them from attacking space maps. */
+            if (pursuitFactionDef.techLevel < PursuitRaidType.minTechLevel)
+            {
+                PursuitRaidType = PawnsArrivalModeDefOf.EdgeWalkIn;
+            }
             PursuitFaction = Find.FactionManager.FirstFactionOfDef(pursuitFactionDef);
-            if (PursuitFaction != null && !pursuitFactionDef.permanentEnemy)
+            if (PursuitFaction != null && !pursuitFactionDef.permanentEnemy && (PursuitFactionPermanentEnemy || startHostile))
             {
                 PursuitFaction.TryAffectGoodwillWith(Faction.OfPlayer, -200, false, false);
-                if (pursuitFactionDef.techLevel < PursuitRaidType.minTechLevel)
-                {
-                    PursuitRaidType = PawnsArrivalModeDefOf.EdgeWalkIn;
-                }
             }
             PursuitFactionName = PursuitFaction?.Name ?? "null faction";
             SetupRanges();
