@@ -1,4 +1,5 @@
-﻿using RimWorld;
+﻿using HarmonyLib;
+using RimWorld;
 using RimWorld.Planet;
 using System;
 using System.Collections.Generic;
@@ -13,11 +14,10 @@ namespace RuthlessPursuingMechanoids
 {
     /* This scenpart forces the Ruthless Pursuit scenpart on all factions in the game.
      * Well, all "normal" factions, at least.
-     * It works with Harmony to add the scenparts right after world generation, but before we actually call the post-world generation function on the scenparts
-     * (through a prefix on said function). Since everything this scenpart does applies only at world gen, we don't need to save any data for it.
      */
     public class ScenPart_RuthlessOmniPursuit : ScenPart
     {
+        private List<ScenPart_RuthlessPursuingMechanoids> pursuitParts = new List<ScenPart_RuthlessPursuingMechanoids>();
         private bool warningDisabled = false;
         private bool disableEndlessWaves = false;
         private bool canDoNormalRaid = false;
@@ -66,6 +66,17 @@ namespace RuthlessPursuingMechanoids
         /* - - FACTION SETTINGS - - */
         internal bool PursuitFactionPermanentEnemy = true;
         /*-*-*-*-*- END OPTIONS VALUES -*-*-*-*-*/
+        private List<Alert_PursuitFactionThreat> AlertCache = new List<Alert_PursuitFactionThreat>();
+
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            /* We only use all of the above fields to initialize the various sub-ScenParts. There's no need to save anything in the Omni ScenPart aside
+             * from said sub-ScenParts. */
+            DebugUtility.DebugLog($"--*-*-* Ruthless Omni Pursuit {Scribe.mode} START *-*-*--");
+            Scribe_Collections.Look(ref pursuitParts, "omniPursuitParts", LookMode.Deep);
+            DebugUtility.DebugLog($"--*-*-* Ruthless Omni Pursuit {Scribe.mode} END *-*-*--");
+        }
         public override void DoEditInterface(Listing_ScenEdit listing)
         {
             float totalBaseHeight = 14f;
@@ -112,13 +123,14 @@ namespace RuthlessPursuingMechanoids
             Widgets.TextFieldNumericLabeled(rect13, "rpmEndlessWaveHours".Translate(), ref EndlessWavesHours, ref ewhbuf, 1, 14400);
             Widgets.CheckboxLabeled(rect14, "rpmNormalRaid".Translate(), ref canDoNormalRaid);
         }
-        public ScenPart_RuthlessPursuingMechanoids GeneratePursuitScenPart(FactionDef inFaction, string facName)
+        private void GeneratePursuitScenPart(FactionDef inFaction, string facName)
         {
             ScenPart_RuthlessPursuingMechanoids newPursuit = new ScenPart_RuthlessPursuingMechanoids(inFaction, facName, PursuitFactionPermanentEnemy, startHostile,
                                                                                                      FirstRaidDelayHours, FirstRaidDelayVarianceHours, RaidDelayHours,
                                                                                                      RaidDelayVarianceHours, warningDisabled, WarningDelayHours, WarningDelayVarianceHours,
                                                                                                      SecondWaveHours, disableEndlessWaves, EndlessWavesHours, canDoNormalRaid);
-            return newPursuit;
+            pursuitParts.Add(newPursuit);
+            DebugUtility.DebugLog($"added new pursuit for faction {facName}");
         }
 
         public override bool CanCoexistWith(ScenPart other)
@@ -129,6 +141,70 @@ namespace RuthlessPursuingMechanoids
             }
 
             return true;
+        }
+        public override void PostWorldGenerate()
+        {
+            pursuitParts.Clear();
+            DebugUtility.DebugLog("Ruthless Omni Pursuit post-world-gen scenpart initialization step 1...");
+            foreach (Faction fac in Find.FactionManager.GetFactions(true, true, true))
+            {
+                if (fac.def.displayInFactionSelection && !fac.def.isPlayer && fac.def.canStageAttacks)
+                {
+                    GeneratePursuitScenPart(fac.def, fac.Name);
+                }
+            }
+            DebugUtility.DebugLog("Ruthless Omni Pursuit post-world-gen scenpart initialization step 2...");
+            foreach (ScenPart_RuthlessPursuingMechanoids part in pursuitParts)
+            {
+                part.PostWorldGenerate();
+            }
+            DebugUtility.DebugLog("Ruthless Omni Pursuit post-world-gen scenpart initialization complete.");
+        }
+
+        public override void PostMapGenerate(Map map)
+        {
+            foreach (ScenPart_RuthlessPursuingMechanoids part in pursuitParts)
+            {
+                part.PostMapGenerate(map);
+            }
+        }
+
+        public override void MapRemoved(Map map)
+        {
+            foreach (ScenPart_RuthlessPursuingMechanoids part in pursuitParts)
+            {
+                part.MapRemoved(map);
+            }
+        }
+
+        public override void Tick()
+        {
+            foreach (ScenPart_RuthlessPursuingMechanoids part in pursuitParts)
+            {
+                part.Tick();
+            }
+
+            /* I feel like there's gotta be a better way to handle the alerts than just rawdogging it like this... */
+            if (Time.frameCount % 20 == 0)
+            {
+                UpdateAlertCache();
+            }
+        }
+        public override IEnumerable<Alert> GetAlerts()
+        {
+            return AlertCache;
+        }
+
+        private void UpdateAlertCache()
+        {
+            AlertCache.Clear();
+            foreach (ScenPart_RuthlessPursuingMechanoids part in pursuitParts)
+            {
+                foreach (Alert_PursuitFactionThreat a in part.GetAlerts())
+                {
+                    AlertCache.Add(a);
+                }
+            }
         }
     }
 }

@@ -25,7 +25,6 @@ namespace RuthlessPursuingMechanoids
      */
     public class ScenPart_RuthlessPursuingMechanoids : ScenPart
     {
-        private bool DebugLoggingEnabled = true;
         private Dictionary<Map, int> mapWarningTimers = new Dictionary<Map, int>();
 
         private Dictionary<Map, int> mapRaidTimers = new Dictionary<Map, int>();
@@ -159,6 +158,10 @@ namespace RuthlessPursuingMechanoids
         private bool ReenableDueToRelations = false;
         private bool FactionIsPermanentEnemy => pursuitFactionDef.permanentEnemy || PursuitFactionPermanentEnemy;
 
+
+        public ScenPart_RuthlessPursuingMechanoids()
+        {
+        }
         public ScenPart_RuthlessPursuingMechanoids(FactionDef pfd, string pfn, bool permaEnemy, bool sh, int frdh, int frdvh, int rdh, int rdvh,
                                                    bool wd, int wdh, int wdvh, int swh, bool dew, int ewh, bool cdnr)
         {
@@ -224,7 +227,7 @@ namespace RuthlessPursuingMechanoids
                 SetFaction();
             }
             SetupRanges();
-            DebugLog(PrintFields() + $"\n\tLoadSaveMode {Scribe.mode}");
+            DebugUtility.DebugLog(PrintFields() + $"\n\tLoadSaveMode {Scribe.mode}");
         }
 
         public override void DoEditInterface(Listing_ScenEdit listing)
@@ -302,12 +305,12 @@ namespace RuthlessPursuingMechanoids
              * with that name. Otherwise, go by def. */
             if (!PursuitFactionName.NullOrEmpty() && PursuitFaction == null)
             {
-                foreach (Faction tmpfac in Find.FactionManager.GetFactions(false, true, true))
+                foreach (Faction tmpfac in Find.FactionManager.GetFactions(true, true, true))
                 {
                     if (tmpfac.def == pursuitFactionDef && tmpfac.HasName && tmpfac.Name == PursuitFactionName)
                     {
                         PursuitFaction = tmpfac;
-                        DebugLog($" [SetFaction] Found faction for name {PursuitFactionName}");
+                        DebugUtility.DebugLog($" [SetFaction] Found faction for name {PursuitFactionName}");
                         break;
                     }
                 }
@@ -318,7 +321,7 @@ namespace RuthlessPursuingMechanoids
                 /* If There are multiple factions with this def, then find a faction that isn't already assigned to a Ruthless Pursuit ScenPart. If all
                  * factions are already assigned, then we move on without doing anything. */
                 List<Faction> facList = Find.FactionManager.AllFactions.Where((Faction f) => f.def == pursuitFactionDef).ToList();
-                DebugLog($" [SetFaction] Found {facList.Count()} factions of def {pursuitFactionDef.LabelCap}");
+                DebugUtility.DebugLog($" [SetFaction] Found {facList.Count()} factions of def {pursuitFactionDef.LabelCap}");
                 if (facList.Count() == 1)
                 {
                     PursuitFaction = Find.FactionManager.FirstFactionOfDef(pursuitFactionDef);
@@ -354,16 +357,16 @@ namespace RuthlessPursuingMechanoids
                 {
                     if (facList.Count() > 0)
                     {
-                        DebugLog($" [SetFaction] found {facList.Count()} faction(s) of def {pursuitFactionDef.LabelCap}, but all were already assigned", LogMessageType.Warning);
+                        DebugUtility.DebugLog($" [SetFaction] found {facList.Count()} faction(s) of def {pursuitFactionDef.LabelCap}, but all were already assigned", LogMessageType.Warning);
                     }
                     else
                     {
-                        DebugLog($" [SetFaction] found no factions of def {pursuitFactionDef.LabelCap}", LogMessageType.Warning);
+                        DebugUtility.DebugLog($" [SetFaction] found no factions of def {pursuitFactionDef.LabelCap}", LogMessageType.Warning);
                     }
                 }
                 else
                 {
-                    DebugLog($" [SetFaction] assigned faction {PursuitFaction.Name}");
+                    DebugUtility.DebugLog($" [SetFaction] assigned faction {PursuitFaction.Name}");
                 }
             }
 
@@ -373,7 +376,7 @@ namespace RuthlessPursuingMechanoids
             }
             else if (PursuitFaction != null && PursuitFactionName != PursuitFaction.Name)
             {
-                DebugLog($" [SetFaction] mismatch between saved PursuitFactionName {PursuitFactionName} and assigned Faction's name {PursuitFaction.Name}. Setting PursuitFactionName to Faction's name.",
+                DebugUtility.DebugLog($" [SetFaction] mismatch between saved PursuitFactionName {PursuitFactionName} and assigned Faction's name {PursuitFaction.Name}. Setting PursuitFactionName to Faction's name.",
                          LogMessageType.Error);
                 PursuitFactionName = PursuitFaction.Name;
             }
@@ -397,7 +400,7 @@ namespace RuthlessPursuingMechanoids
             SetupRanges();
             mapWarningTimers.Clear();
             mapRaidTimers.Clear();
-            DebugLog(PrintFields());
+            DebugUtility.DebugLog(PrintFields());
         }
 
         public override void PostMapGenerate(Map map)
@@ -445,7 +448,7 @@ namespace RuthlessPursuingMechanoids
                 {
                     Messages.Message("rpmMessagePermaEnemyFactionRelationsReset".Translate(PursuitFaction.Name), GlobalTargetInfo.Invalid, MessageTypeDefOf.NegativeEvent);
                     PursuitFaction.TryAffectGoodwillWith(Faction.OfPlayer, relationDecrease);
-                    DebugLog($"reduced faction {PursuitFaction.Name}'s goodwill by {relationDecrease}");
+                    DebugUtility.DebugLog($"reduced faction {PursuitFaction.Name}'s goodwill by {relationDecrease}");
                 }
             }
             foreach (Map tmpMap in tmpMaps)
@@ -465,7 +468,7 @@ namespace RuthlessPursuingMechanoids
                 else if (ReenableDueToRelations)
                 {
                     /* Restart the timers with minimum values */
-                    DebugLog($"Restarting timers for faction {PursuitFaction?.Name ?? "null"} with minimum timers");
+                    DebugUtility.DebugLog($"Restarting timers for faction {PursuitFaction?.Name ?? "null"} with minimum timers");
                     StartTimers(tmpMap, true);
                 }
                 /* This if clause only exists to wipe out pocket map timers that were added before the pocket map timer bug was fixed. */
@@ -522,12 +525,11 @@ namespace RuthlessPursuingMechanoids
             {
                 if (isFirstPeriod)
                 {
+                    /* For the first interval, we'll set the warning timer to be as early as possible. */
+                    int warningDelayAbsolute = Math.Max(FirstRaidDelayHours - WarningDelayHours - WarningDelayVarianceHours, 0) * GenDate.TicksPerHour;
                     /* It seems that we don't actually call into the Tick function at Tick 0. Which means that the first tick we check is actually TickInterval.
                      * So to make sure warning letters are sent properly, we set TickInterval to be the earliest tick a warning or raid can occur at. */
-                    int warningDelayAbsolute = Math.Max(FirstRaidDelayHours - WarningDelayHours, 0);
-                    IntRange tmpWarningDelayRange = new IntRange(Math.Max(warningDelayAbsolute - WarningDelayVarianceHours, 0) * GenDate.TicksPerHour,
-                                                                         (warningDelayAbsolute + WarningDelayVarianceHours) * GenDate.TicksPerHour);
-                    mapWarningTimers[map] = Find.TickManager.TicksGame + Math.Max((forceMinimum ? tmpWarningDelayRange.min : tmpWarningDelayRange.RandomInRange), TickInterval);
+                    mapWarningTimers[map] = Find.TickManager.TicksGame + Math.Max(warningDelayAbsolute, TickInterval);
                     mapRaidTimers[map] = Find.TickManager.TicksGame + Math.Max((forceMinimum ? FirstRaidDelayRange.min : FirstRaidDelayRange.RandomInRange), TickInterval);
                     isFirstPeriod = false;
                 }
@@ -536,7 +538,7 @@ namespace RuthlessPursuingMechanoids
                     mapWarningTimers[map] = Find.TickManager.TicksGame + (forceMinimum ? WarningDelayRange.min : WarningDelayRange.RandomInRange);
                     mapRaidTimers[map] = Find.TickManager.TicksGame + (forceMinimum ? RaidDelayRange.min : RaidDelayRange.RandomInRange);
                 }
-                DebugLog($"Starting Timers for faction {PursuitFaction.Name} | Warning timer: {mapWarningTimers[map]} Raid timer: {mapRaidTimers[map]} Current Tick: {Find.TickManager.TicksGame} Force Minimum: {forceMinimum}");
+                DebugUtility.DebugLog($"Starting Timers for faction {PursuitFaction.Name} | Warning timer: {mapWarningTimers[map]} Raid timer: {mapRaidTimers[map]} Current Tick: {Find.TickManager.TicksGame} Force Minimum: {forceMinimum}");
             }
         }
 
@@ -547,7 +549,7 @@ namespace RuthlessPursuingMechanoids
             {
                 if (!Disabled)
                 {
-                    DebugLog($"Disabling pursuit for faction {PursuitFaction?.Name ?? "null"}");
+                    DebugUtility.DebugLog($"Disabling pursuit for faction {PursuitFaction?.Name ?? "null"}");
                     if (PursuitFaction.deactivated || PursuitFaction.defeated)
                     {
                         /* Send letter saying the faction was defeated, and thus pursuit is ceasing */
@@ -567,7 +569,7 @@ namespace RuthlessPursuingMechanoids
             {
                 if (Disabled)
                 {
-                    DebugLog($"Enabling pursuit for faction {PursuitFaction?.Name ?? "null"}");
+                    DebugUtility.DebugLog($"Enabling pursuit for faction {PursuitFaction?.Name ?? "null"}");
                     if (PursuitFaction != null && !FactionIsPermanentEnemy && FactionUtility.HostileTo(PursuitFaction, Faction.OfPlayer))
                     {
                         /* Send letter saying that pursuit is resuming due to degraded faction relations */
@@ -582,12 +584,12 @@ namespace RuthlessPursuingMechanoids
                         /* NOTE: in this case, it is likely that all of the current maps will have been wiped of raid timers. We *could* grab all of the
                          * current maps and re-add timers... but since this case shouldn't ever be reached under normal operation, I think it's best to leave it
                          * code-lite. Timers will be applied to any new maps made after this point, anyways. */
-                        DebugLog($"Unexpected pursuit re-enabling for faction {PursuitFaction.Name}. Deactivated: {PursuitFaction.deactivated} Defeated: {PursuitFaction.defeated}", LogMessageType.Warning);
+                        DebugUtility.DebugLog($"Unexpected pursuit re-enabling for faction {PursuitFaction.Name}. Deactivated: {PursuitFaction.deactivated} Defeated: {PursuitFaction.defeated}", LogMessageType.Warning);
                     }
                     else
                     {
                         /* It should be LITERALLY logically impossible to reach this case. I'm including it only for completeness. */
-                        DebugLog($"Enabled Ruthless Pursuit for NULL faction (how the hell did that happen??)", LogMessageType.Error);
+                        DebugUtility.DebugLog($"Enabled Ruthless Pursuit for NULL faction (how the hell did that happen??)", LogMessageType.Error);
                     }
                 }
                 DisabledDueToRelations = false;
@@ -622,7 +624,7 @@ namespace RuthlessPursuingMechanoids
             incidentParms.raidArrivalMode = PursuitRaidType;
             incidentParms.raidStrategy = RaidStrategyDefOf.ImmediateAttack;
             IncidentDefOf.RaidEnemy.Worker.TryExecute(incidentParms);
-            DebugLog($"Firing new raid with {incidentParms.points} threat points");
+            DebugUtility.DebugLog($"Firing new raid with {incidentParms.points} threat points for faction {PursuitFaction.Name}");
         }
 
         public override IEnumerable<Alert> GetAlerts()
@@ -651,25 +653,6 @@ namespace RuthlessPursuingMechanoids
             output.AppendLine($"\tWARNING DELAY Disabled: {warningDisabled} Mean: {WarningDelayHours} Variance: {WarningDelayVarianceHours} Range: ({WarningDelayRange.min},{WarningDelayRange.max})");
 
             return output.ToString().Trim();
-        }
-        private void DebugLog(string msg, LogMessageType messageType = LogMessageType.Message)
-        {
-            string output = "[Ruthless Faction Pursuit] " + msg;
-            if (messageType == LogMessageType.Message)
-            {
-                if (DebugLoggingEnabled)
-                {
-                    Log.Message(output);
-                }
-            }
-            else if (messageType == LogMessageType.Warning)
-            {
-                Log.Warning(output);
-            }
-            else if (messageType == LogMessageType.Error)
-            {
-                Log.Error(output);
-            }
         }
         public override bool CanCoexistWith(ScenPart other)
         {

@@ -33,32 +33,13 @@ namespace RuthlessPursuingMechanoids
                     {
                         if (!part.FactionCanNormalRaid)
                         {
+                            DebugUtility.DebugLog($"excluded faction {part.PursuitFaction.Name} from raid");
                             __result = false;
                         }
                         break;
                     }
                 }
             }
-        }
-    }
-    [HarmonyPatch(typeof(Scenario), "PostWorldGenerate")]
-    internal class Scenario_PostWorldGenerate_RuthlessOmniPursuitPatch
-    {
-        private bool Prefix(ref bool __result)
-        {
-            ScenPart_RuthlessOmniPursuit omniPursuit = Find.Scenario.AllParts.OfType<ScenPart_RuthlessOmniPursuit>().First();
-            if (omniPursuit != null)
-            {
-                foreach(Faction fac in Find.FactionManager.GetFactions(false, true, true))
-                {
-                    if (fac.def.displayInFactionSelection && !fac.def.isPlayer && fac.def.canStageAttacks)
-                    {
-                        ScenPart_RuthlessPursuingMechanoids newPursuit = omniPursuit.GeneratePursuitScenPart(fac.def, fac.Name);
-                        Find.Scenario.AllParts.AddItem(newPursuit);
-                    }
-                }
-            }
-            return __result;
         }
     }
 }

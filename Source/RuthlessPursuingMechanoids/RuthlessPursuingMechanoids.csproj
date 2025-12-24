@@ -57,6 +57,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DebugUtility.cs" />
     <Compile Include="HarmonyPatches.cs" />
     <Compile Include="RuthlessOmniPursuit.cs" />
     <Compile Include="RuthlessPursuingMechanoids.cs" />
