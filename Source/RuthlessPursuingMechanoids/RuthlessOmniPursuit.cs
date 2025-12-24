@@ -205,6 +205,13 @@ namespace RuthlessPursuingMechanoids
                     AlertCache.Add(a);
                 }
             }
+            if (AlertCache.Count() > RFPSettings.maxAlerts)
+            {
+                int numUnseen = AlertCache.Count() - RFPSettings.maxAlerts;
+                /* Sort the alerts and take the ones that have the shortest timers */
+                AlertCache.SortBy((Alert_PursuitFactionThreat a) => a.raidTick);
+                AlertCache.RemoveRange(RFPSettings.maxAlerts, numUnseen);
+            }
         }
     }
 }

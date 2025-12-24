@@ -482,11 +482,11 @@ namespace RuthlessPursuingMechanoids
                 {
                     if (pursuitFactionDef == FactionDefOf.Mechanoid)
                     {
-                        Find.LetterStack.ReceiveLetter("LetterLabelMechanoidThreatRuthless".Translate(), "LetterTextMechanoidThreatRuthless".Translate(), LetterDefOf.ThreatSmall);
+                        Find.LetterStack.ReceiveLetter("LetterLabelMechanoidThreatRuthless".Translate(), "LetterTextMechanoidThreatRuthless".Translate((TimerIntervalTick(mapRaidTimers[tmpMap]) - Find.TickManager.TicksGame).ToStringTicksToPeriod(allowSeconds: false, shortForm: false, canUseDecimals: false)), LetterDefOf.ThreatSmall);
                     }
                     else
                     {
-                        Find.LetterStack.ReceiveLetter("LetterLabelRuthlessFaction".Translate(PursuitFaction.NameColored), "LetterTextRuthlessFaction".Translate(PursuitFaction.NameColored), LetterDefOf.ThreatSmall);
+                        Find.LetterStack.ReceiveLetter("LetterLabelRuthlessFaction".Translate(PursuitFaction.NameColored), "LetterTextRuthlessFaction".Translate(PursuitFaction.NameColored, (TimerIntervalTick(mapRaidTimers[tmpMap]) - Find.TickManager.TicksGame).ToStringTicksToPeriod(allowSeconds: false, shortForm: false, canUseDecimals: false)), LetterDefOf.ThreatSmall);
                     }
                 }
                 if (Find.TickManager.TicksGame == TimerIntervalTick(mapRaidTimers[tmpMap]))

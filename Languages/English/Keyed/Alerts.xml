@@ -8,4 +8,7 @@
   
   <rpmMessagePermaEnemyFactionRelationsReset>Faction {0} is set to be permamently hostile. Reseting relations to -100.</rpmMessagePermaEnemyFactionRelationsReset>
   
+  <OmniUnseenAlert>{0} Additional Incoming Factions</OmniUnseenAlert>
+  <OmniUnseenAlertDesc>An additional {0} factions are hunting down your location.\n\nFlee the map before they arrive!</OmniUnseenAlertDesc>
+  
 </LanguageData>

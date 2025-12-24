@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <LanguageData>
   <LetterLabelMechanoidThreatRuthless>Incoming mechanoids</LetterLabelMechanoidThreatRuthless>
-  <LetterTextMechanoidThreatRuthless>The mechhive's scanning process is close to determining your location. When it locates you, it will send a massive mechanoid force to kill you.\n\nGather your supplies, then flee the map by any means you have.</LetterTextMechanoidThreatRuthless>
+  <LetterTextMechanoidThreatRuthless>The mechhive's scanning process is close to determining your location. When it locates you, it will send a massive mechanoid force to kill you.\n\nGather your supplies, then flee the map by any means you have.\n\nThey will arrive in {0}.</LetterTextMechanoidThreatRuthless>
   <LetterLabelRuthlessFaction>Incoming {0}</LetterLabelRuthlessFaction>
-  <LetterTextRuthlessFaction>The {0} faction is close to determining your location. When they locate you, they will send a massive force to kill you.\n\nGather your supplies, then flee the map by any means you have.</LetterTextRuthlessFaction>
+  <LetterTextRuthlessFaction>The {0} faction is close to determining your location. When they locate you, they will send a massive force to kill you.\n\nGather your supplies, then flee the map by any means you have.\n\nThey will arrive in {1}.</LetterTextRuthlessFaction>
   
   <LetterLabelRuthlessFactionDefeated>{0} Pursuit Ceasing</LetterLabelRuthlessFactionDefeated>
   <LetterTextRuthlessFactionDefeated>The {0} faction has been defeated! As a result, their Ruthless Pursuit of you will now cease.\n\nYou can rest easy, knowing they will never bother you again.</LetterTextRuthlessFactionDefeated>
