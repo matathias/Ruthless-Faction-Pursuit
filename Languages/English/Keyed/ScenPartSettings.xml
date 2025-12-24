@@ -20,4 +20,6 @@
   
   <rpmPermanentEnemies>Perma-Hostile Factions</rpmPermanentEnemies>
   <rpmStartHostiles>Start Hostile</rpmStartHostiles>
+  
+  <printDebug>Print Debug Messages</printDebug>
 </LanguageData>

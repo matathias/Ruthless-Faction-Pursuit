@@ -9,13 +9,12 @@ namespace RuthlessPursuingMechanoids
 {
     public static class DebugUtility
     {
-        public static bool DebugLoggingEnabled = true;
         public static void DebugLog(string msg, LogMessageType messageType = LogMessageType.Message)
         {
             string output = "[Ruthless Faction Pursuit] " + msg;
             if (messageType == LogMessageType.Message)
             {
-                if (DebugLoggingEnabled)
+                if (RFPSettings.printDebug)
                 {
                     Log.Message(output);
                 }
