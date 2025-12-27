@@ -322,35 +322,40 @@ namespace RuthlessPursuingMechanoids
                  * factions are already assigned, then we move on without doing anything. */
                 List<Faction> facList = Find.FactionManager.AllFactions.Where((Faction f) => f.def == pursuitFactionDef).ToList();
                 DebugUtility.DebugLog($" [SetFaction] Found {facList.Count()} factions of def {pursuitFactionDef.LabelCap}");
-                if (facList.Count() == 1)
+                foreach (Faction f in facList)
                 {
-                    PursuitFaction = Find.FactionManager.FirstFactionOfDef(pursuitFactionDef);
-                }
-                else if (facList.Count() > 1)
-                {
-                    List<ScenPart_RuthlessPursuingMechanoids> pursuitScenParts = Find.Scenario.AllParts.OfType<ScenPart_RuthlessPursuingMechanoids>().ToList();
-                    foreach (Faction f in facList)
+                    bool foundInScenPart = false;
+                    foreach (ScenPart_RuthlessPursuingMechanoids part in Find.Scenario.AllParts.OfType<ScenPart_RuthlessPursuingMechanoids>().ToList())
                     {
-                        bool foundInScenPart = false;
-                        foreach (ScenPart_RuthlessPursuingMechanoids part in pursuitScenParts)
+                        if (part.FactionName == f.Name)
                         {
-                            if (part.FactionName == f.Name)
-                            {
-                                foundInScenPart = true;
-                                break;
-                            }
-                        }
-                        if (!foundInScenPart)
-                        {
-                            PursuitFaction = f;
+                            foundInScenPart = true;
+                            DebugUtility.DebugLog($"Faction {f.Name} already has a Ruthless Pursuit scenpart, skipping");
                             break;
                         }
                     }
-                    /* If PursuitFaction is still NULL at this point, then it means that every faction of def pursuitFactionDef has already been assigned
-                     * to a Ruthless Pursuit ScenPart. We *could* assign a second part to a random faction, but that seems a little odd to do. So for now,
-                     * we'll just leave PursuitFaction as NULL, meaning that this particular scenPart won't actually be doing anything. */
+                    foreach (ScenPart_RuthlessOmniPursuit part in Find.Scenario.AllParts.OfType<ScenPart_RuthlessOmniPursuit>().ToList())
+                    {
+                        foreach (ScenPart_RuthlessPursuingMechanoids opart in part.PursuitParts)
+                        {
+                            if (opart.FactionName == f.Name)
+                            {
+                                foundInScenPart = true;
+                                DebugUtility.DebugLog($"Faction {f.Name} already has a Ruthless Pursuit scenpart through Omni Pursuit, skipping");
+                                break;
+                            }
+                        }
+                    }
+                    if (!foundInScenPart)
+                    {
+                        PursuitFaction = f;
+                        break;
+                    }
                 }
-                /* PursuitFaciton being NULL here could mean that there are *no* factions with def pursuitFactionDef. In which case, we... should
+                /* If PursuitFaction is still NULL at this point, then it means that every faction of def pursuitFactionDef has already been assigned
+                 * to a Ruthless Pursuit ScenPart. We *could* assign a second part to a random faction, but that seems a little odd to do. So for now,
+                 * we'll just leave PursuitFaction as NULL, meaning that this particular scenPart won't actually be doing anything. */
+                /* PursuitFaction being NULL here could mean that there are *no* factions with def pursuitFactionDef. In which case, we... should
                  * also do nothing. */
                 /* This following code is purely for debugging/logging */
                 if (PursuitFaction == null)
@@ -653,15 +658,6 @@ namespace RuthlessPursuingMechanoids
             output.AppendLine($"\tWARNING DELAY Disabled: {warningDisabled} Mean: {WarningDelayHours} Variance: {WarningDelayVarianceHours} Range: ({WarningDelayRange.min},{WarningDelayRange.max})");
 
             return output.ToString().Trim();
-        }
-        public override bool CanCoexistWith(ScenPart other)
-        {
-            if (other is ScenPart_RuthlessOmniPursuit)
-            {
-                return false;
-            }
-
-            return true;
         }
     }
 

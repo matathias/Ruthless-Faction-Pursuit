@@ -18,6 +18,7 @@ namespace RuthlessPursuingMechanoids
     public class ScenPart_RuthlessOmniPursuit : ScenPart
     {
         private List<ScenPart_RuthlessPursuingMechanoids> pursuitParts = new List<ScenPart_RuthlessPursuingMechanoids>();
+        public List<ScenPart_RuthlessPursuingMechanoids> PursuitParts => pursuitParts;
         private bool warningDisabled = false;
         private bool disableEndlessWaves = false;
         private bool canDoNormalRaid = false;
@@ -132,16 +133,6 @@ namespace RuthlessPursuingMechanoids
             pursuitParts.Add(newPursuit);
             DebugUtility.DebugLog($"added new pursuit for faction {facName}");
         }
-
-        public override bool CanCoexistWith(ScenPart other)
-        {
-            if (other is ScenPart_RuthlessPursuingMechanoids)
-            {
-                return false;
-            }
-
-            return true;
-        }
         public override void PostWorldGenerate()
         {
             pursuitParts.Clear();
@@ -150,7 +141,22 @@ namespace RuthlessPursuingMechanoids
             {
                 if (fac.def.displayInFactionSelection && !fac.def.isPlayer && fac.def.canStageAttacks)
                 {
-                    GeneratePursuitScenPart(fac.def, fac.Name);
+                    List<ScenPart_RuthlessPursuingMechanoids> pursuitScenParts = Find.Scenario.AllParts.OfType<ScenPart_RuthlessPursuingMechanoids>().ToList();
+                    bool foundInScenPart = false;
+                    foreach (ScenPart_RuthlessPursuingMechanoids part in pursuitScenParts)
+                    {
+                        if (part.FactionName == fac.Name)
+                        {
+                            /* This faction has already been assigned a Ruthless Pursuit scenpart. Skip it. */
+                            foundInScenPart = true;
+                            DebugUtility.DebugLog($"Faction {fac.Name} already has a Ruthless Pursuit scenpart, skipping");
+                            break;
+                        }
+                    }
+                    if (!foundInScenPart)
+                    {
+                        GeneratePursuitScenPart(fac.def, fac.Name);
+                    }
                 }
             }
             DebugUtility.DebugLog("Ruthless Omni Pursuit post-world-gen scenpart initialization step 2...");
