@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RimWorld;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,6 +28,15 @@ namespace RuthlessPursuingMechanoids
             {
                 Log.Error(output);
             }
+        }
+    }
+
+    public static class CommonUtil
+    {
+        public static bool ValidFactionDef(FactionDef fac)
+        {
+            /* Exclude PColony for Empire compatibility */
+            return fac.displayInFactionSelection && !fac.isPlayer && fac.canStageAttacks && fac.defName != "PColony";
         }
     }
 }

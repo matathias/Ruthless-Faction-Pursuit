@@ -74,8 +74,22 @@ namespace RuthlessPursuingMechanoids
             base.ExposeData();
             /* We only use all of the above fields to initialize the various sub-ScenParts. There's no need to save anything in the Omni ScenPart aside
              * from said sub-ScenParts. */
+            /* I lied. We need to save all of that data so that Scenarios created with the Ruthless Omni Pursuit ScenPart actually save the various parameters */
             DebugUtility.DebugLog($"--*-*-* Ruthless Omni Pursuit {Scribe.mode} START *-*-*--");
             Scribe_Collections.Look(ref pursuitParts, "omniPursuitParts", LookMode.Deep);
+            Scribe_Values.Look(ref FirstRaidDelayHours, "firstRaidDelayHours", FirstRaidDelayHoursDef);
+            Scribe_Values.Look(ref FirstRaidDelayVarianceHours, "firstRaidDelayVarianceHours", FirstRaidDelayVarianceHoursDef);
+            Scribe_Values.Look(ref RaidDelayHours, "raidDelayHours", RaidDelayHoursDef);
+            Scribe_Values.Look(ref RaidDelayVarianceHours, "raidDelayVarianceHours", RaidDelayVarianceHoursDef);
+            Scribe_Values.Look(ref warningDisabled, "warningDisabled", defaultValue: false);
+            Scribe_Values.Look(ref WarningDelayHours, "warningDelayHours", WarningDelayHoursDef);
+            Scribe_Values.Look(ref WarningDelayVarianceHours, "warningDelayVarianceHours", WarningDelayVarianceHoursDef);
+            Scribe_Values.Look(ref SecondWaveHours, "secondWaveHours", SecondWaveHoursDef);
+            Scribe_Values.Look(ref disableEndlessWaves, "disableEndlessWaves", defaultValue: false);
+            Scribe_Values.Look(ref EndlessWavesHours, "EndlessWavesHours", EndlessWavesHoursDef);
+            Scribe_Values.Look(ref PursuitFactionPermanentEnemy, "pursuitFactionPermanentEnemy", defaultValue: true);
+            Scribe_Values.Look(ref startHostile, "startHostile", defaultValue: true);
+            Scribe_Values.Look(ref canDoNormalRaid, "canDoNormalRaid", defaultValue: false);
             DebugUtility.DebugLog($"--*-*-* Ruthless Omni Pursuit {Scribe.mode} END *-*-*--");
         }
         public override void DoEditInterface(Listing_ScenEdit listing)
@@ -139,7 +153,7 @@ namespace RuthlessPursuingMechanoids
             DebugUtility.DebugLog("Ruthless Omni Pursuit post-world-gen scenpart initialization step 1...");
             foreach (Faction fac in Find.FactionManager.GetFactions(true, true, true))
             {
-                if (fac.def.displayInFactionSelection && !fac.def.isPlayer && fac.def.canStageAttacks)
+                if (CommonUtil.ValidFactionDef(fac.def))
                 {
                     List<ScenPart_RuthlessPursuingMechanoids> pursuitScenParts = Find.Scenario.AllParts.OfType<ScenPart_RuthlessPursuingMechanoids>().ToList();
                     bool foundInScenPart = false;

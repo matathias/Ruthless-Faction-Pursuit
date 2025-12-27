@@ -209,8 +209,10 @@ namespace RuthlessPursuingMechanoids
             Scribe_Values.Look(ref WarningDelayVarianceHours, "warningDelayVarianceHours", WarningDelayVarianceHoursDef);
             Scribe_Values.Look(ref SecondWaveHours, "secondWaveHours", SecondWaveHoursDef);
             Scribe_Values.Look(ref disableEndlessWaves, "disableEndlessWaves", defaultValue: false);
+            Scribe_Values.Look(ref EndlessWavesHours, "EndlessWavesHours", EndlessWavesHoursDef);
             Scribe_Defs.Look(ref PursuitRaidType, "pursuitRaidType");
             Scribe_Values.Look(ref PursuitFactionPermanentEnemy, "pursuitFactionPermanentEnemy", defaultValue: true);
+            Scribe_Values.Look(ref startHostile, "startHostile", defaultValue: true);
             Scribe_Defs.Look(ref pursuitFactionDef, "pursuitFactionDef");
             Scribe_Values.Look(ref canDoNormalRaid, "canDoNormalRaid", defaultValue: false);
             Scribe_Values.Look(ref PursuitFactionName, "pursuitFactionName", "");
@@ -257,7 +259,8 @@ namespace RuthlessPursuingMechanoids
             if (Widgets.ButtonText(rect1, pursuitFactionDef.LabelCap))
             {
                 List<FloatMenuOption> faclist = new List<FloatMenuOption>();
-                foreach (FactionDef item in DefDatabase<FactionDef>.AllDefs.Where((FactionDef d) => (d.displayInFactionSelection && !d.isPlayer && d.canStageAttacks)))
+                /* Exclude PColony for Empire compatibility */
+                foreach (FactionDef item in DefDatabase<FactionDef>.AllDefs.Where((FactionDef d) => (CommonUtil.ValidFactionDef(d))))
                 {
                     FactionDef localFd = item;
                     faclist.Add(new FloatMenuOption(localFd.LabelCap, delegate
