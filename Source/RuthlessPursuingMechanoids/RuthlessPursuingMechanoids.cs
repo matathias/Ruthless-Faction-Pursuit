@@ -393,6 +393,10 @@ namespace RuthlessPursuingMechanoids
         public override void PostWorldGenerate()
         {
             isFirstPeriod = true;
+            /* Re-initialize PursuitFaction and PursuitFactionName to resolve an error caused by generating a world, backing out to the worldgen screen, and then
+             * re-generating a new world. */
+            PursuitFaction = null;
+            PursuitFactionName = "";
             /* If the faction doesn't have the tech level for transport pods, then set them to raid through EdgeWalkIn instead.
              * This will also block them from attacking space maps. */
             if (pursuitFactionDef.techLevel < PursuitRaidType.minTechLevel)
