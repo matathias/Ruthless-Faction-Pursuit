@@ -492,13 +492,21 @@ namespace RuthlessPursuingMechanoids
 
                 if (Find.TickManager.TicksGame == TimerIntervalTick(mapWarningTimers[tmpMap]))
                 {
-                    if (pursuitFactionDef == FactionDefOf.Mechanoid)
+                    /* If the warning timer is the same as the raid timer, then send a special message saying that the faction got the drop on the player */
+                    if (TimerIntervalTick(mapWarningTimers[tmpMap]) == TimerIntervalTick(mapRaidTimers[tmpMap]))
                     {
-                        Find.LetterStack.ReceiveLetter("LetterLabelMechanoidThreatRuthless".Translate(), "LetterTextMechanoidThreatRuthless".Translate((TimerIntervalTick(mapRaidTimers[tmpMap]) - Find.TickManager.TicksGame).ToStringTicksToPeriod(allowSeconds: false, shortForm: false, canUseDecimals: false)), LetterDefOf.ThreatSmall);
+                        Find.LetterStack.ReceiveLetter("LetterLabelRuthlessFactionImminent".Translate(PursuitFaction.NameColored), "LetterTextRuthlessFactionImminent".Translate(PursuitFaction.NameColored), LetterDefOf.ThreatSmall);
                     }
                     else
                     {
-                        Find.LetterStack.ReceiveLetter("LetterLabelRuthlessFaction".Translate(PursuitFaction.NameColored), "LetterTextRuthlessFaction".Translate(PursuitFaction.NameColored, (TimerIntervalTick(mapRaidTimers[tmpMap]) - Find.TickManager.TicksGame).ToStringTicksToPeriod(allowSeconds: false, shortForm: false, canUseDecimals: false)), LetterDefOf.ThreatSmall);
+                        if (pursuitFactionDef == FactionDefOf.Mechanoid)
+                        {
+                            Find.LetterStack.ReceiveLetter("LetterLabelMechanoidThreatRuthless".Translate(), "LetterTextMechanoidThreatRuthless".Translate((TimerIntervalTick(mapRaidTimers[tmpMap]) - Find.TickManager.TicksGame).ToStringTicksToPeriod(allowSeconds: false, shortForm: false, canUseDecimals: false)), LetterDefOf.ThreatSmall);
+                        }
+                        else
+                        {
+                            Find.LetterStack.ReceiveLetter("LetterLabelRuthlessFaction".Translate(PursuitFaction.NameColored), "LetterTextRuthlessFaction".Translate(PursuitFaction.NameColored, (TimerIntervalTick(mapRaidTimers[tmpMap]) - Find.TickManager.TicksGame).ToStringTicksToPeriod(allowSeconds: false, shortForm: false, canUseDecimals: false)), LetterDefOf.ThreatSmall);
+                        }
                     }
                 }
                 if (Find.TickManager.TicksGame == TimerIntervalTick(mapRaidTimers[tmpMap]))
@@ -537,18 +545,23 @@ namespace RuthlessPursuingMechanoids
             {
                 if (isFirstPeriod)
                 {
+                    /* Roll the raid timer first, and use that as the ceiling for the warning timer. The warning timer is what signals the alert, after all, so if the
+                     * raid hits before the warning, then it might not be clear to the player that they're dealing with the ruthless pursuit raid. */
+                    mapRaidTimers[map] = Find.TickManager.TicksGame + Math.Max((forceMinimum ? FirstRaidDelayRange.min : FirstRaidDelayRange.RandomInRange), TickInterval);
+
                     /* For the first interval, we'll set the warning timer to be as early as possible. */
                     int warningDelayAbsolute = Math.Max(FirstRaidDelayHours - WarningDelayHours - WarningDelayVarianceHours, 0) * GenDate.TicksPerHour;
                     /* It seems that we don't actually call into the Tick function at Tick 0. Which means that the first tick we check is actually TickInterval.
                      * So to make sure warning letters are sent properly, we set TickInterval to be the earliest tick a warning or raid can occur at. */
-                    mapWarningTimers[map] = Find.TickManager.TicksGame + Math.Max(warningDelayAbsolute, TickInterval);
-                    mapRaidTimers[map] = Find.TickManager.TicksGame + Math.Max((forceMinimum ? FirstRaidDelayRange.min : FirstRaidDelayRange.RandomInRange), TickInterval);
+                    mapWarningTimers[map] = Math.Min(Find.TickManager.TicksGame + Math.Max(warningDelayAbsolute, TickInterval), mapRaidTimers[map]);
                     isFirstPeriod = false;
                 }
                 else
                 {
-                    mapWarningTimers[map] = Find.TickManager.TicksGame + (forceMinimum ? WarningDelayRange.min : WarningDelayRange.RandomInRange);
+                    /* Roll the raidtimer first, and use that as the ceiling for the warning timer. The warning timer is what signals the alert, after all, so if the
+                     * raid hits before the warning, then it might not be clear to the player that they're dealing with the ruthless pursuit raid. */
                     mapRaidTimers[map] = Find.TickManager.TicksGame + (forceMinimum ? RaidDelayRange.min : RaidDelayRange.RandomInRange);
+                    mapWarningTimers[map] = Math.Min(Find.TickManager.TicksGame + (forceMinimum ? WarningDelayRange.min : WarningDelayRange.RandomInRange), mapRaidTimers[map]);
                 }
                 DebugUtility.DebugLog($"Starting Timers for faction {PursuitFaction.Name} | Warning timer: {mapWarningTimers[map]} Raid timer: {mapRaidTimers[map]} Current Tick: {Find.TickManager.TicksGame} Force Minimum: {forceMinimum}");
             }

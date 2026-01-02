@@ -5,6 +5,9 @@
   <LetterLabelRuthlessFaction>Incoming {0}</LetterLabelRuthlessFaction>
   <LetterTextRuthlessFaction>The {0} faction is close to determining your location. When they locate you, they will send a massive force to kill you.\n\nGather your supplies, then flee the map by any means you have.\n\nThey will arrive in {1}.</LetterTextRuthlessFaction>
   
+  <LetterLabelRuthlessFactionImminent>{0} Ambush!</LetterLabelRuthlessFactionImminent>
+  <LetterTextRuthlessFactionImminent>The {0} faction got the drop on you! They know your location, and a massive force will arrive imminently to kill you!\n\nGather your supplies and flee the map as soon as you can.</LetterTextRuthlessFactionImminent>
+  
   <LetterLabelRuthlessFactionDefeated>{0} Pursuit Ceasing</LetterLabelRuthlessFactionDefeated>
   <LetterTextRuthlessFactionDefeated>The {0} faction has been defeated! As a result, their Ruthless Pursuit of you will now cease.\n\nYou can rest easy, knowing they will never bother you again.</LetterTextRuthlessFactionDefeated>
   
