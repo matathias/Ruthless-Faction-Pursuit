@@ -304,6 +304,16 @@ namespace RuthlessPursuingMechanoids
 
         private void SetFaction()
         {
+            if (Find.FactionManager == null)
+            {
+                DebugUtility.DebugLog("[SetFaction] encountered NULL Find.FactionManager");
+                return;
+            }
+            if (Find.Scenario == null)
+            {
+                DebugUtility.DebugLog("[SetFaction] encountered NULL Find.Scenario");
+                return;
+            }
             /* If we already have the faction's name (such as if this scenpart was added through Omni Pursuit, or after load), then find the faction
              * with that name. Otherwise, go by def. */
             if (!PursuitFactionName.NullOrEmpty() && PursuitFaction == null)
