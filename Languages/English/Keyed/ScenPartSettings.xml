@@ -18,6 +18,14 @@
   <rpmEndlessWaveHours>Endless Waves Delay</rpmEndlessWaveHours>
   <rpmNormalRaid>Normal Raid Candidate</rpmNormalRaid>
   
+  <rpmDefaultRaidMulti>Default Raid Values</rpmDefaultRaidMulti>
+  <rpmInitialRaidMulti>Initial Raid Mult</rpmInitialRaidMulti>
+  <rpmInitialRaidFloor>Initial Raid Floor</rpmInitialRaidFloor>
+  <rpmSecondRaidMulti>Second Raid Mult</rpmSecondRaidMulti>
+  <rpmSecondRaidFloor>Second Raid Floor</rpmSecondRaidFloor>
+  <rpmEndlessRaidMulti>Endless Raid Mult</rpmEndlessRaidMulti>
+  <rpmEndlessRaidFloor>Endless Raid Floor</rpmEndlessRaidFloor>
+  
   <rpmPermanentEnemies>Perma-Hostile Factions</rpmPermanentEnemies>
   <rpmStartHostiles>Start Hostile</rpmStartHostiles>
   

@@ -46,6 +46,7 @@ namespace RuthlessPursuingMechanoids
         private bool disableEndlessWaves = false;
         private bool canDoNormalRaid = false;
         private bool startHostile = true;
+        private bool defaultRaidValues = true;
 
         public bool FactionCanNormalRaid => canDoNormalRaid;
 
@@ -66,6 +67,12 @@ namespace RuthlessPursuingMechanoids
         private const int WarningDelayVarianceHoursDef   = 24;  // +/-1 day
         private const int SecondWaveHoursDef             = 12;
         private const int EndlessWavesHoursDef           = 3;
+        private const float InitialRaidMultiplierDef     = 1.5f;
+        private const float SecondRaidMultiplierDef      = 2.0f;
+        private const float EndlessRaidMultiplierDef     = 2.0f;
+        private const int InitialRaidFloorDef            = 2000;
+        private const int SecondRaidFloorDef             = 8000;
+        private const int EndlessRaidFloorDef            = 10000;
         /* These fields are the ones edited by the scenario part UI. They influence the actual values used in calculations. */
         /* - - FIRST RAID DELAY - - */
         /* Having a different value for the first raid allows the scenario part to be setup like the vanilla Pursuing Mechanoids, if desired.
@@ -98,6 +105,19 @@ namespace RuthlessPursuingMechanoids
         private string PursuitFactionName = "";
         private PawnsArrivalModeDef PursuitRaidType = PawnsArrivalModeDefOf.RandomDrop;
         private bool PursuitFactionPermanentEnemy = true;
+        /* - - RAID VALUES - - */
+        private float InitialRaidMultiplier = InitialRaidMultiplierDef;
+        private string irmbuf;
+        private float SecondRaidMultiplier = SecondRaidMultiplierDef;
+        private string srmbuf;
+        private float EndlessRaidMultiplier = EndlessRaidMultiplierDef;
+        private string ermbuf;
+        private int InitialRaidFloor = InitialRaidFloorDef;
+        private string irfbuf;
+        private int SecondRaidFloor = SecondRaidFloorDef;
+        private string srfbuf;
+        private int EndlessRaidFloor = EndlessRaidFloorDef;
+        private string erfbuf;
         /*-*-*-*-*- END OPTIONS VALUES -*-*-*-*-*/
 
         public string FactionName => PursuitFactionName;
@@ -163,7 +183,8 @@ namespace RuthlessPursuingMechanoids
         {
         }
         public ScenPart_RuthlessPursuingMechanoids(FactionDef pfd, string pfn, bool permaEnemy, bool sh, int frdh, int frdvh, int rdh, int rdvh,
-                                                   bool wd, int wdh, int wdvh, int swh, bool dew, int ewh, bool cdnr)
+                                                   bool wd, int wdh, int wdvh, int swh, bool dew, int ewh, bool cdnr, float irm, int irf, float srm,
+                                                   int srf, float erm, int erf)
         {
             pursuitFactionDef = pfd;
             PursuitFactionName = pfn;
@@ -180,6 +201,12 @@ namespace RuthlessPursuingMechanoids
             disableEndlessWaves = dew;
             EndlessWavesHours = ewh;
             canDoNormalRaid = cdnr;
+            InitialRaidMultiplier = irm;
+            InitialRaidFloor = irf;
+            SecondRaidMultiplier = srm;
+            SecondRaidFloor = srf;
+            EndlessRaidMultiplier = erm;
+            EndlessRaidFloor = erf;
         }
         public override void ExposeData()
         {
@@ -216,6 +243,13 @@ namespace RuthlessPursuingMechanoids
             Scribe_Defs.Look(ref pursuitFactionDef, "pursuitFactionDef");
             Scribe_Values.Look(ref canDoNormalRaid, "canDoNormalRaid", defaultValue: false);
             Scribe_Values.Look(ref PursuitFactionName, "pursuitFactionName", "");
+            Scribe_Values.Look(ref defaultRaidValues, "defaultRaidValues", defaultValue: true);
+            Scribe_Values.Look(ref InitialRaidMultiplier, "initialraidmultiplier", InitialRaidMultiplierDef);
+            Scribe_Values.Look(ref SecondRaidMultiplier, "secondraidmultiplier", SecondRaidMultiplierDef);
+            Scribe_Values.Look(ref EndlessRaidMultiplier, "endlessraidmultiplier", EndlessRaidMultiplierDef);
+            Scribe_Values.Look(ref InitialRaidFloor, "initialraidfloor", InitialRaidFloorDef);
+            Scribe_Values.Look(ref SecondRaidFloor, "secondraidfloor", SecondRaidFloorDef);
+            Scribe_Values.Look(ref EndlessRaidFloor, "endlessraidfloor", EndlessRaidFloorDef);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 if (mapWarningTimers == null)
@@ -234,7 +268,7 @@ namespace RuthlessPursuingMechanoids
 
         public override void DoEditInterface(Listing_ScenEdit listing)
         {
-            float totalBaseHeight = 15f;
+            float totalBaseHeight = 15f + (defaultRaidValues ? 1f : 7f);
             Rect scenPartRect = listing.GetScenPartRect(this, ScenPart.RowHeight * totalBaseHeight);
             float rowHeight = scenPartRect.height / totalBaseHeight;
             new Rect(scenPartRect.x, scenPartRect.y, scenPartRect.width, rowHeight);
@@ -254,6 +288,13 @@ namespace RuthlessPursuingMechanoids
             Rect rect14 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 13f, scenPartRect.width, rowHeight);
             Rect rect15 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 14f, scenPartRect.width, rowHeight);
             Rect rect16 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 15f, scenPartRect.width, rowHeight);
+
+            Rect rect17 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 16f, scenPartRect.width, rowHeight);
+            Rect rect18 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 17f, scenPartRect.width, rowHeight);
+            Rect rect19 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 18f, scenPartRect.width, rowHeight);
+            Rect rect20 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 19f, scenPartRect.width, rowHeight);
+            Rect rect21 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 20f, scenPartRect.width, rowHeight);
+            Rect rect22 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 21f, scenPartRect.width, rowHeight);
             /* -- Widgets for picking faction and raid type -- */
             /* Faction Picker */
             if (Widgets.ButtonText(rect1, pursuitFactionDef.LabelCap))
@@ -300,6 +341,26 @@ namespace RuthlessPursuingMechanoids
             Widgets.CheckboxLabeled(rect13, "rpmDisableEndless".Translate(), ref disableEndlessWaves);
             Widgets.TextFieldNumericLabeled(rect14, "rpmEndlessWaveHours".Translate(), ref EndlessWavesHours, ref ewhbuf, 1, 14400);
             Widgets.CheckboxLabeled(rect15, "rpmNormalRaid".Translate(), ref canDoNormalRaid);
+
+            Widgets.CheckboxLabeled(rect16, "rpmDefaultRaidMulti".Translate(), ref defaultRaidValues);
+            if (!defaultRaidValues)
+            {
+                Widgets.TextFieldNumericLabeled(rect17, "rpmInitialRaidMulti".Translate(), ref InitialRaidMultiplier, ref irmbuf, 1, 1000000);
+                Widgets.TextFieldNumericLabeled(rect18, "rpmInitialRaidFloor".Translate(), ref InitialRaidFloor, ref irfbuf, 1, 1000000);
+                Widgets.TextFieldNumericLabeled(rect19, "rpmSecondRaidMulti".Translate(), ref SecondRaidMultiplier, ref srmbuf, 1, 1000000);
+                Widgets.TextFieldNumericLabeled(rect20, "rpmSecondRaidFloor".Translate(), ref SecondRaidFloor, ref srfbuf, 1, 1000000);
+                Widgets.TextFieldNumericLabeled(rect21, "rpmEndlessRaidMulti".Translate(), ref EndlessRaidMultiplier, ref ermbuf, 1, 1000000);
+                Widgets.TextFieldNumericLabeled(rect22, "rpmEndlessRaidFloor".Translate(), ref EndlessRaidFloor, ref erfbuf, 1, 1000000);
+            }
+            else
+            {
+                InitialRaidMultiplier = InitialRaidMultiplierDef;
+                SecondRaidMultiplier = SecondRaidMultiplierDef;
+                EndlessRaidMultiplier = EndlessRaidMultiplierDef;
+                InitialRaidFloor = InitialRaidFloorDef;
+                SecondRaidFloor = SecondRaidFloorDef;
+                EndlessRaidFloor = EndlessRaidFloorDef;
+            }
         }
 
         private void SetFaction()
@@ -521,11 +582,11 @@ namespace RuthlessPursuingMechanoids
                 }
                 if (Find.TickManager.TicksGame == TimerIntervalTick(mapRaidTimers[tmpMap]))
                 {
-                    FireRaid_NewTemp(tmpMap, 1.5f, 2000f);
+                    FireRaid_NewTemp(tmpMap, InitialRaidMultiplier, InitialRaidFloor);
                 }
                 if (Find.TickManager.TicksGame == TimerIntervalTick(mapRaidTimers[tmpMap] + SecondRaidDelay))
                 {
-                    FireRaid_NewTemp(tmpMap, 2f, 8000f);
+                    FireRaid_NewTemp(tmpMap, SecondRaidMultiplier, SecondRaidFloor);
                 }
                 /* Vanilla seems to stop at the second raid. So, theoretically, if you beat both raids... you're home free? Seems too easy. Especially with mods.
                  * So I added an endless mode. The raids will *never* stop coming, not until you pack up and leave.
@@ -534,7 +595,7 @@ namespace RuthlessPursuingMechanoids
                     Find.TickManager.TicksGame > TimerIntervalTick(mapRaidTimers[tmpMap] + SecondRaidDelay) &&
                     Find.TickManager.TicksGame % TimerInterval(EndlessRaidInterval) == 0)
                 {
-                    FireRaid_NewTemp(tmpMap, 2f, 10000f);
+                    FireRaid_NewTemp(tmpMap, EndlessRaidMultiplier, EndlessRaidFloor);
                 }
             }
             if (ReenableDueToRelations)
@@ -686,6 +747,7 @@ namespace RuthlessPursuingMechanoids
             output.AppendLine($"\tFIRST RAID DELAY Mean: {FirstRaidDelayHours} Variance: {FirstRaidDelayVarianceHours} Range: ({FirstRaidDelayRange.min},{FirstRaidDelayRange.max})");
             output.AppendLine($"\tRAID DELAY Mean: {RaidDelayHours} Variance: {RaidDelayVarianceHours} Range: ({RaidDelayRange.min},{RaidDelayRange.max})");
             output.AppendLine($"\tWARNING DELAY Disabled: {warningDisabled} Mean: {WarningDelayHours} Variance: {WarningDelayVarianceHours} Range: ({WarningDelayRange.min},{WarningDelayRange.max})");
+            output.AppendLine($"\tRAID VALUES: initial: {InitialRaidMultiplier} {InitialRaidFloor} second: {SecondRaidMultiplier} {SecondRaidFloor} endless: {EndlessRaidMultiplier} {EndlessRaidFloor}");
 
             return output.ToString().Trim();
         }

@@ -23,6 +23,7 @@ namespace RuthlessPursuingMechanoids
         private bool disableEndlessWaves = false;
         private bool canDoNormalRaid = false;
         private bool startHostile = true;
+        private bool defaultRaidValues = true;
 
         /*-*-*-*-*- OPTIONS VALUES -*-*-*-*-*/
         /* These fields are the default values for each field */
@@ -37,6 +38,12 @@ namespace RuthlessPursuingMechanoids
         private const int WarningDelayVarianceHoursDef = 24;  // +/-1 day
         private const int SecondWaveHoursDef = 12;
         private const int EndlessWavesHoursDef = 3;
+        private const float InitialRaidMultiplierDef = 1.5f;
+        private const float SecondRaidMultiplierDef = 2.0f;
+        private const float EndlessRaidMultiplierDef = 2.0f;
+        private const int InitialRaidFloorDef = 2000;
+        private const int SecondRaidFloorDef = 8000;
+        private const int EndlessRaidFloorDef = 10000;
         /* These fields are the ones edited by the scenario part UI. They influence the actual values used in calculations. */
         /* - - FIRST RAID DELAY - - */
         /* Having a different value for the first raid allows the scenario part to be setup like the vanilla Pursuing Mechanoids, if desired.
@@ -66,6 +73,19 @@ namespace RuthlessPursuingMechanoids
         private string ewhbuf;
         /* - - FACTION SETTINGS - - */
         internal bool PursuitFactionPermanentEnemy = true;
+        /* - - RAID VALUES - - */
+        private float InitialRaidMultiplier = InitialRaidMultiplierDef;
+        private string irmbuf;
+        private float SecondRaidMultiplier = SecondRaidMultiplierDef;
+        private string srmbuf;
+        private float EndlessRaidMultiplier = EndlessRaidMultiplierDef;
+        private string ermbuf;
+        private int InitialRaidFloor = InitialRaidFloorDef;
+        private string irfbuf;
+        private int SecondRaidFloor = SecondRaidFloorDef;
+        private string srfbuf;
+        private int EndlessRaidFloor = EndlessRaidFloorDef;
+        private string erfbuf;
         /*-*-*-*-*- END OPTIONS VALUES -*-*-*-*-*/
         private List<Alert_PursuitFactionThreat> AlertCache = new List<Alert_PursuitFactionThreat>();
 
@@ -90,11 +110,18 @@ namespace RuthlessPursuingMechanoids
             Scribe_Values.Look(ref PursuitFactionPermanentEnemy, "pursuitFactionPermanentEnemy", defaultValue: true);
             Scribe_Values.Look(ref startHostile, "startHostile", defaultValue: true);
             Scribe_Values.Look(ref canDoNormalRaid, "canDoNormalRaid", defaultValue: false);
+            Scribe_Values.Look(ref defaultRaidValues, "defaultRaidValues", defaultValue: true);
+            Scribe_Values.Look(ref InitialRaidMultiplier, "initialraidmultiplier", InitialRaidMultiplierDef);
+            Scribe_Values.Look(ref SecondRaidMultiplier, "secondraidmultiplier", SecondRaidMultiplierDef);
+            Scribe_Values.Look(ref EndlessRaidMultiplier, "endlessraidmultiplier", EndlessRaidMultiplierDef);
+            Scribe_Values.Look(ref InitialRaidFloor, "initialraidfloor", InitialRaidFloorDef);
+            Scribe_Values.Look(ref SecondRaidFloor, "secondraidfloor", SecondRaidFloorDef);
+            Scribe_Values.Look(ref EndlessRaidFloor, "endlessraidfloor", EndlessRaidFloorDef);
             DebugUtility.DebugLog($"--*-*-* Ruthless Omni Pursuit {Scribe.mode} END *-*-*--");
         }
         public override void DoEditInterface(Listing_ScenEdit listing)
         {
-            float totalBaseHeight = 14f;
+            float totalBaseHeight = 14f + (defaultRaidValues ? 1f : 7f); ;
             Rect scenPartRect = listing.GetScenPartRect(this, ScenPart.RowHeight * totalBaseHeight);
             float rowHeight = scenPartRect.height / totalBaseHeight;
             new Rect(scenPartRect.x, scenPartRect.y, scenPartRect.width, rowHeight);
@@ -114,6 +141,13 @@ namespace RuthlessPursuingMechanoids
             Rect rect14 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 13f, scenPartRect.width, rowHeight);
             Rect rect15 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 14f, scenPartRect.width, rowHeight);
             Rect rect16 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 15f, scenPartRect.width, rowHeight);
+
+            Rect rect17 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 16f, scenPartRect.width, rowHeight);
+            Rect rect18 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 17f, scenPartRect.width, rowHeight);
+            Rect rect19 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 18f, scenPartRect.width, rowHeight);
+            Rect rect20 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 19f, scenPartRect.width, rowHeight);
+            Rect rect21 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 20f, scenPartRect.width, rowHeight);
+            Rect rect22 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 21f, scenPartRect.width, rowHeight);
             /* Permanent enemy checkbox */
             Widgets.CheckboxLabeled(rect1, "rpmPermanentEnemies".Translate(), ref PursuitFactionPermanentEnemy);
             if (!PursuitFactionPermanentEnemy)
@@ -137,13 +171,35 @@ namespace RuthlessPursuingMechanoids
             Widgets.CheckboxLabeled(rect12, "rpmDisableEndless".Translate(), ref disableEndlessWaves);
             Widgets.TextFieldNumericLabeled(rect13, "rpmEndlessWaveHours".Translate(), ref EndlessWavesHours, ref ewhbuf, 1, 14400);
             Widgets.CheckboxLabeled(rect14, "rpmNormalRaid".Translate(), ref canDoNormalRaid);
+
+            Widgets.CheckboxLabeled(rect15, "rpmDefaultRaidMulti".Translate(), ref defaultRaidValues);
+            if (!defaultRaidValues)
+            {
+                Widgets.TextFieldNumericLabeled(rect16, "rpmInitialRaidMulti".Translate(), ref InitialRaidMultiplier, ref irmbuf, 1, 1000000);
+                Widgets.TextFieldNumericLabeled(rect17, "rpmInitialRaidFloor".Translate(), ref InitialRaidFloor, ref irfbuf, 1, 1000000);
+                Widgets.TextFieldNumericLabeled(rect18, "rpmSecondRaidMulti".Translate(), ref SecondRaidMultiplier, ref srmbuf, 1, 1000000);
+                Widgets.TextFieldNumericLabeled(rect19, "rpmSecondRaidFloor".Translate(), ref SecondRaidFloor, ref srfbuf, 1, 1000000);
+                Widgets.TextFieldNumericLabeled(rect20, "rpmEndlessRaidMulti".Translate(), ref EndlessRaidMultiplier, ref ermbuf, 1, 1000000);
+                Widgets.TextFieldNumericLabeled(rect21, "rpmEndlessRaidFloor".Translate(), ref EndlessRaidFloor, ref erfbuf, 1, 1000000);
+            }
+            else
+            {
+                InitialRaidMultiplier = InitialRaidMultiplierDef;
+                SecondRaidMultiplier = SecondRaidMultiplierDef;
+                EndlessRaidMultiplier = EndlessRaidMultiplierDef;
+                InitialRaidFloor = InitialRaidFloorDef;
+                SecondRaidFloor = SecondRaidFloorDef;
+                EndlessRaidFloor = EndlessRaidFloorDef;
+            }
         }
         private void GeneratePursuitScenPart(FactionDef inFaction, string facName)
         {
             ScenPart_RuthlessPursuingMechanoids newPursuit = new ScenPart_RuthlessPursuingMechanoids(inFaction, facName, PursuitFactionPermanentEnemy, startHostile,
                                                                                                      FirstRaidDelayHours, FirstRaidDelayVarianceHours, RaidDelayHours,
                                                                                                      RaidDelayVarianceHours, warningDisabled, WarningDelayHours, WarningDelayVarianceHours,
-                                                                                                     SecondWaveHours, disableEndlessWaves, EndlessWavesHours, canDoNormalRaid);
+                                                                                                     SecondWaveHours, disableEndlessWaves, EndlessWavesHours, canDoNormalRaid,
+                                                                                                     InitialRaidMultiplier, InitialRaidFloor, SecondRaidMultiplier, SecondRaidFloor,
+                                                                                                     EndlessRaidMultiplier, EndlessRaidFloor);
             pursuitParts.Add(newPursuit);
             DebugUtility.DebugLog($"added new pursuit for faction {facName}");
         }
