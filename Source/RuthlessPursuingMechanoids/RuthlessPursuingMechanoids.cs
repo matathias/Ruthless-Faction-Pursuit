@@ -271,7 +271,6 @@ namespace RuthlessPursuingMechanoids
             float totalBaseHeight = 15f + (defaultRaidValues ? 1f : 7f);
             Rect scenPartRect = listing.GetScenPartRect(this, ScenPart.RowHeight * totalBaseHeight);
             float rowHeight = scenPartRect.height / totalBaseHeight;
-            new Rect(scenPartRect.x, scenPartRect.y, scenPartRect.width, rowHeight);
             Rect rect1 = new Rect(scenPartRect.x, scenPartRect.y, scenPartRect.width, rowHeight);
             Rect rect2 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight, scenPartRect.width, rowHeight);
             Rect rect3 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 2f, scenPartRect.width, rowHeight);
@@ -646,7 +645,7 @@ namespace RuthlessPursuingMechanoids
                 if (!Disabled)
                 {
                     DebugUtility.DebugLog($"Disabling pursuit for faction {PursuitFaction?.Name ?? "null"}");
-                    if (PursuitFaction.deactivated || PursuitFaction.defeated)
+                    if (PursuitFaction != null && (PursuitFaction.deactivated || PursuitFaction.defeated))
                     {
                         /* Send letter saying the faction was defeated, and thus pursuit is ceasing */
                         Find.LetterStack.ReceiveLetter("LetterLabelRuthlessFactionDefeated".Translate(PursuitFaction.NameColored), "LetterTextRuthlessFactionDefeated".Translate(PursuitFaction.NameColored), LetterDefOf.PositiveEvent);
@@ -698,11 +697,11 @@ namespace RuthlessPursuingMechanoids
         {
             int warningDelayAbsolute = Math.Max(RaidDelayHours - WarningDelayHours, 0);
             WarningDelayRange = new IntRange(Math.Max(warningDelayAbsolute - WarningDelayVarianceHours, 0) * GenDate.TicksPerHour,
-                                             (warningDelayAbsolute + WarningDelayVarianceHours) * GenDate.TicksPerHour);
-            RaidDelayRange = new IntRange((RaidDelayHours - RaidDelayVarianceHours) * GenDate.TicksPerHour,
-                                          (RaidDelayHours + RaidDelayVarianceHours) * GenDate.TicksPerHour);
-            FirstRaidDelayRange = new IntRange((FirstRaidDelayHours - FirstRaidDelayVarianceHours) * GenDate.TicksPerHour,
-                                               (FirstRaidDelayHours + FirstRaidDelayVarianceHours) * GenDate.TicksPerHour);
+                                                     (warningDelayAbsolute + WarningDelayVarianceHours) * GenDate.TicksPerHour);
+            RaidDelayRange = new IntRange(Math.Max((RaidDelayHours - RaidDelayVarianceHours) * GenDate.TicksPerHour, 0),
+                                                   (RaidDelayHours + RaidDelayVarianceHours) * GenDate.TicksPerHour);
+            FirstRaidDelayRange = new IntRange(Math.Max((FirstRaidDelayHours - FirstRaidDelayVarianceHours) * GenDate.TicksPerHour, 0),
+                                                        (FirstRaidDelayHours + FirstRaidDelayVarianceHours) * GenDate.TicksPerHour);
         }
 
         private void FireRaid(Map map)

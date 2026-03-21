@@ -124,7 +124,6 @@ namespace RuthlessPursuingMechanoids
             float totalBaseHeight = 14f + (defaultRaidValues ? 1f : 7f); ;
             Rect scenPartRect = listing.GetScenPartRect(this, ScenPart.RowHeight * totalBaseHeight);
             float rowHeight = scenPartRect.height / totalBaseHeight;
-            new Rect(scenPartRect.x, scenPartRect.y, scenPartRect.width, rowHeight);
             Rect rect1 = new Rect(scenPartRect.x, scenPartRect.y, scenPartRect.width, rowHeight);
             Rect rect2 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight, scenPartRect.width, rowHeight);
             Rect rect3 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 2f, scenPartRect.width, rowHeight);
