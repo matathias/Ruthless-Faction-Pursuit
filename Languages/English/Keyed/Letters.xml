@@ -16,4 +16,7 @@
   
   <LetterLabelRuthlessPursuitResumed>{0} Pursuit Resumed</LetterLabelRuthlessPursuitResumed>
   <LetterTextRuthlessPursuitResumed>Due to degraded relations, the {0} faction is resuming their Ruthless Pursuit of your colonies!</LetterTextRuthlessPursuitResumed>
+
+  <LetterLabelRuthlessPursuitWavesComplete>{0} Pursuit Ended</LetterLabelRuthlessPursuitWavesComplete>
+  <LetterTextRuthlessPursuitWavesComplete>Your colony has successfully defeated {1} waves of raids from {0}. Their Ruthless Pursuit has come to an end.\n\nYou have proven your strength, and they will pursue you no more.</LetterTextRuthlessPursuitWavesComplete>
 </LanguageData>

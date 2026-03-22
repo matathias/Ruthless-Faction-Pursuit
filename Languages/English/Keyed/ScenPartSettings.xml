@@ -17,7 +17,9 @@
   <rpmDisableEndless>Disable Endless Waves</rpmDisableEndless>
   <rpmEndlessWaveHours>Endless Waves Delay</rpmEndlessWaveHours>
   <rpmNormalRaid>Normal Raid Candidate</rpmNormalRaid>
-  
+  <rpmEnableWavesEnd>Enable Waves End Condition</rpmEnableWavesEnd>
+  <rpmWavesEndCondition>Waves to Defeat</rpmWavesEndCondition>
+
   <rpmDefaultRaidMulti>Default Raid Values</rpmDefaultRaidMulti>
   <rpmInitialRaidMulti>Initial Raid Mult</rpmInitialRaidMulti>
   <rpmInitialRaidFloor>Initial Raid Floor</rpmInitialRaidFloor>

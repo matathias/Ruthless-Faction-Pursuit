@@ -73,6 +73,8 @@ namespace RuthlessPursuingMechanoids
         private const int InitialRaidFloorDef            = 2000;
         private const int SecondRaidFloorDef             = 8000;
         private const int EndlessRaidFloorDef            = 10000;
+        private const bool EnableWavesEndConditionDef    = false;
+        private const int WavesEndConditionDef           = 10;
         /* These fields are the ones edited by the scenario part UI. They influence the actual values used in calculations. */
         /* - - FIRST RAID DELAY - - */
         /* Having a different value for the first raid allows the scenario part to be setup like the vanilla Pursuing Mechanoids, if desired.
@@ -118,6 +120,10 @@ namespace RuthlessPursuingMechanoids
         private string srfbuf;
         private int EndlessRaidFloor = EndlessRaidFloorDef;
         private string erfbuf;
+        /* - - WAVES END CONDITION - - */
+        private bool enableWavesEndCondition = EnableWavesEndConditionDef;
+        private int WavesEndCondition = WavesEndConditionDef;
+        private string wecbuf;
         /*-*-*-*-*- END OPTIONS VALUES -*-*-*-*-*/
 
         public string FactionName => PursuitFactionName;
@@ -133,6 +139,10 @@ namespace RuthlessPursuingMechanoids
         private List<Map> tmpRaidKeys;
 
         private List<int> tmpRaidValues;
+
+        private List<Map> tmpPendingWavesKeys;
+
+        private List<int> tmpPendingWavesValues;
 
         private List<Map> tmpMaps = new List<Map>();
 
@@ -176,6 +186,10 @@ namespace RuthlessPursuingMechanoids
         private bool DisabledDueToRelations = false;
         private bool AlertToBeDisabled = false;
         private bool ReenableDueToRelations = false;
+        private int wavesDefeated = 0;
+        private Dictionary<Map, int> mapPendingWaves = new Dictionary<Map, int>();
+        private bool wavesTargetReached = false;
+        private bool disabledDueToWaveEndCondition = false;
         private bool FactionIsPermanentEnemy => pursuitFactionDef.permanentEnemy || PursuitFactionPermanentEnemy;
 
 
@@ -184,7 +198,7 @@ namespace RuthlessPursuingMechanoids
         }
         public ScenPart_RuthlessPursuingMechanoids(FactionDef pfd, string pfn, bool permaEnemy, bool sh, int frdh, int frdvh, int rdh, int rdvh,
                                                    bool wd, int wdh, int wdvh, int swh, bool dew, int ewh, bool cdnr, float irm, int irf, float srm,
-                                                   int srf, float erm, int erf)
+                                                   int srf, float erm, int erf, bool ewec, int wec)
         {
             pursuitFactionDef = pfd;
             PursuitFactionName = pfn;
@@ -207,6 +221,8 @@ namespace RuthlessPursuingMechanoids
             SecondRaidFloor = srf;
             EndlessRaidMultiplier = erm;
             EndlessRaidFloor = erf;
+            enableWavesEndCondition = ewec;
+            WavesEndCondition = wec;
         }
         public override void ExposeData()
         {
@@ -219,6 +235,13 @@ namespace RuthlessPursuingMechanoids
                     {
                         mapWarningTimers.Remove(item);
                         mapRaidTimers.Remove(item);
+                    }
+                }
+                foreach (Map item in mapPendingWaves.Keys.ToList())
+                {
+                    if (item?.Parent == null || item.Parent.Destroyed)
+                    {
+                        mapPendingWaves.Remove(item);
                     }
                 }
             }
@@ -250,6 +273,12 @@ namespace RuthlessPursuingMechanoids
             Scribe_Values.Look(ref InitialRaidFloor, "initialraidfloor", InitialRaidFloorDef);
             Scribe_Values.Look(ref SecondRaidFloor, "secondraidfloor", SecondRaidFloorDef);
             Scribe_Values.Look(ref EndlessRaidFloor, "endlessraidfloor", EndlessRaidFloorDef);
+            Scribe_Values.Look(ref enableWavesEndCondition, "enableWavesEndCondition", EnableWavesEndConditionDef);
+            Scribe_Values.Look(ref WavesEndCondition, "wavesEndCondition", WavesEndConditionDef);
+            Scribe_Values.Look(ref wavesDefeated, "wavesDefeated", 0);
+            Scribe_Values.Look(ref wavesTargetReached, "wavesTargetReached", defaultValue: false);
+            Scribe_Values.Look(ref disabledDueToWaveEndCondition, "disabledDueToWaveEndCondition", defaultValue: false);
+            Scribe_Collections.Look(ref mapPendingWaves, "mapPendingWaves", LookMode.Reference, LookMode.Value, ref tmpPendingWavesKeys, ref tmpPendingWavesValues);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 if (mapWarningTimers == null)
@@ -260,6 +289,10 @@ namespace RuthlessPursuingMechanoids
                 {
                     mapRaidTimers = new Dictionary<Map, int>();
                 }
+                if (mapPendingWaves == null)
+                {
+                    mapPendingWaves = new Dictionary<Map, int>();
+                }
                 SetFaction();
             }
             SetupRanges();
@@ -268,7 +301,7 @@ namespace RuthlessPursuingMechanoids
 
         public override void DoEditInterface(Listing_ScenEdit listing)
         {
-            float totalBaseHeight = 15f + (defaultRaidValues ? 1f : 7f);
+            float totalBaseHeight = 15f + (enableWavesEndCondition ? 2f : 1f) + (defaultRaidValues ? 1f : 7f);
             Rect scenPartRect = listing.GetScenPartRect(this, ScenPart.RowHeight * totalBaseHeight);
             float rowHeight = scenPartRect.height / totalBaseHeight;
             Rect rect1 = new Rect(scenPartRect.x, scenPartRect.y, scenPartRect.width, rowHeight);
@@ -340,6 +373,27 @@ namespace RuthlessPursuingMechanoids
             Widgets.CheckboxLabeled(rect13, "rpmDisableEndless".Translate(), ref disableEndlessWaves);
             Widgets.TextFieldNumericLabeled(rect14, "rpmEndlessWaveHours".Translate(), ref EndlessWavesHours, ref ewhbuf, 1, 14400);
             Widgets.CheckboxLabeled(rect15, "rpmNormalRaid".Translate(), ref canDoNormalRaid);
+
+            /* -- Waves end condition -- */
+            Rect rectWavesCheck = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 15f, scenPartRect.width, rowHeight);
+            Widgets.CheckboxLabeled(rectWavesCheck, "rpmEnableWavesEnd".Translate(), ref enableWavesEndCondition);
+            float wavesRowCount = 1f;
+            if (enableWavesEndCondition)
+            {
+                Rect rectWavesNum = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 16f, scenPartRect.width, rowHeight);
+                Widgets.TextFieldNumericLabeled(rectWavesNum, "rpmWavesEndCondition".Translate(), ref WavesEndCondition, ref wecbuf, 1, 10000);
+                wavesRowCount = 2f;
+            }
+
+            /* Reassign remaining rects with wave rows offset */
+            float raidStart = 15f + wavesRowCount;
+            rect16 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * raidStart, scenPartRect.width, rowHeight);
+            rect17 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * (raidStart + 1f), scenPartRect.width, rowHeight);
+            rect18 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * (raidStart + 2f), scenPartRect.width, rowHeight);
+            rect19 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * (raidStart + 3f), scenPartRect.width, rowHeight);
+            rect20 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * (raidStart + 4f), scenPartRect.width, rowHeight);
+            rect21 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * (raidStart + 5f), scenPartRect.width, rowHeight);
+            rect22 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * (raidStart + 6f), scenPartRect.width, rowHeight);
 
             Widgets.CheckboxLabeled(rect16, "rpmDefaultRaidMulti".Translate(), ref defaultRaidValues);
             if (!defaultRaidValues)
@@ -482,6 +536,10 @@ namespace RuthlessPursuingMechanoids
             SetupRanges();
             mapWarningTimers.Clear();
             mapRaidTimers.Clear();
+            wavesDefeated = 0;
+            wavesTargetReached = false;
+            disabledDueToWaveEndCondition = false;
+            mapPendingWaves.Clear();
             DebugUtility.DebugLog(PrintFields());
         }
 
@@ -496,6 +554,7 @@ namespace RuthlessPursuingMechanoids
             {
                 mapRaidTimers.Remove(map);
             }
+            mapPendingWaves.Remove(map);
         }
 
         private int TimerIntervalTick(int timer)
@@ -579,22 +638,65 @@ namespace RuthlessPursuingMechanoids
                         }
                     }
                 }
-                if (Find.TickManager.TicksGame == TimerIntervalTick(mapRaidTimers[tmpMap]))
+                if (!wavesTargetReached && Find.TickManager.TicksGame == TimerIntervalTick(mapRaidTimers[tmpMap]))
                 {
                     FireRaid_NewTemp(tmpMap, InitialRaidMultiplier, InitialRaidFloor);
                 }
-                if (Find.TickManager.TicksGame == TimerIntervalTick(mapRaidTimers[tmpMap] + SecondRaidDelay))
+                if (!wavesTargetReached && Find.TickManager.TicksGame == TimerIntervalTick(mapRaidTimers[tmpMap] + SecondRaidDelay))
                 {
                     FireRaid_NewTemp(tmpMap, SecondRaidMultiplier, SecondRaidFloor);
                 }
                 /* Vanilla seems to stop at the second raid. So, theoretically, if you beat both raids... you're home free? Seems too easy. Especially with mods.
                  * So I added an endless mode. The raids will *never* stop coming, not until you pack up and leave.
                  */
-                if (!disableEndlessWaves &&
+                if (!wavesTargetReached && !disableEndlessWaves &&
                     Find.TickManager.TicksGame > TimerIntervalTick(mapRaidTimers[tmpMap] + SecondRaidDelay) &&
                     Find.TickManager.TicksGame % TimerInterval(EndlessRaidInterval) == 0)
                 {
                     FireRaid_NewTemp(tmpMap, EndlessRaidMultiplier, EndlessRaidFloor);
+                }
+                /* Wave end condition: check if pending waves on this map have been defeated */
+                if (enableWavesEndCondition && !wavesTargetReached
+                    && mapPendingWaves.TryGetValue(tmpMap, out int pendingWaves) && pendingWaves > 0)
+                {
+                    bool threatsRemain = tmpMap.mapPawns.SpawnedPawnsInFaction(PursuitFaction)
+                        .Any(p => GenHostility.IsActiveThreatToPlayer(p));
+                    if (!threatsRemain)
+                    {
+                        wavesDefeated += pendingWaves;
+                        mapPendingWaves.Remove(tmpMap);
+                        DebugUtility.DebugLog($"Waves defeated on map for faction {PursuitFaction.Name}. Total: {wavesDefeated}/{WavesEndCondition}");
+                        if (wavesDefeated >= WavesEndCondition)
+                        {
+                            wavesTargetReached = true;
+                            mapPendingWaves.Clear();
+                            DebugUtility.DebugLog($"Wave target reached for faction {PursuitFaction.Name}! Waiting for all threats to clear.");
+                        }
+                    }
+                }
+            }
+            /* Wave end condition: once target is reached, wait for all maps to be clear of threats before disabling pursuit */
+            if (wavesTargetReached && !disabledDueToWaveEndCondition)
+            {
+                bool anyThreats = false;
+                foreach (Map m in tmpMaps)
+                {
+                    if (m.mapPawns.SpawnedPawnsInFaction(PursuitFaction)
+                        .Any(p => GenHostility.IsActiveThreatToPlayer(p)))
+                    {
+                        anyThreats = true;
+                        break;
+                    }
+                }
+                if (!anyThreats)
+                {
+                    disabledDueToWaveEndCondition = true;
+                    Disabled = true;
+                    Find.LetterStack.ReceiveLetter(
+                        "LetterLabelRuthlessPursuitWavesComplete".Translate(PursuitFaction.NameColored),
+                        "LetterTextRuthlessPursuitWavesComplete".Translate(PursuitFaction.NameColored, wavesDefeated),
+                        LetterDefOf.PositiveEvent);
+                    DebugUtility.DebugLog($"Waves end condition met for faction {PursuitFaction.Name}! Pursuit permanently disabled.");
                 }
             }
             if (ReenableDueToRelations)
@@ -639,6 +741,11 @@ namespace RuthlessPursuingMechanoids
 
         private bool UpdateDisabled()
         {
+            if (disabledDueToWaveEndCondition)
+            {
+                Disabled = true;
+                return Disabled;
+            }
             if (PursuitFaction == null || PursuitFaction.deactivated || PursuitFaction.defeated ||
                 (!FactionIsPermanentEnemy && !FactionUtility.HostileTo(PursuitFaction, Faction.OfPlayer)))
             {
@@ -718,8 +825,15 @@ namespace RuthlessPursuingMechanoids
             incidentParms.faction = PursuitFaction;
             incidentParms.raidArrivalMode = PursuitRaidType;
             incidentParms.raidStrategy = RaidStrategyDefOf.ImmediateAttack;
-            IncidentDefOf.RaidEnemy.Worker.TryExecute(incidentParms);
+            bool raidFired = IncidentDefOf.RaidEnemy.Worker.TryExecute(incidentParms);
             DebugUtility.DebugLog($"Firing new raid with {incidentParms.points} threat points for faction {PursuitFaction.Name}");
+            if (raidFired && enableWavesEndCondition)
+            {
+                if (!mapPendingWaves.ContainsKey(map))
+                    mapPendingWaves[map] = 0;
+                mapPendingWaves[map]++;
+                DebugUtility.DebugLog($"Wave fired for faction {PursuitFaction.Name}. Pending waves on map: {mapPendingWaves[map]}, Total defeated: {wavesDefeated}/{WavesEndCondition}");
+            }
         }
 
         public override IEnumerable<Alert> GetAlerts()
@@ -747,6 +861,7 @@ namespace RuthlessPursuingMechanoids
             output.AppendLine($"\tRAID DELAY Mean: {RaidDelayHours} Variance: {RaidDelayVarianceHours} Range: ({RaidDelayRange.min},{RaidDelayRange.max})");
             output.AppendLine($"\tWARNING DELAY Disabled: {warningDisabled} Mean: {WarningDelayHours} Variance: {WarningDelayVarianceHours} Range: ({WarningDelayRange.min},{WarningDelayRange.max})");
             output.AppendLine($"\tRAID VALUES: initial: {InitialRaidMultiplier} {InitialRaidFloor} second: {SecondRaidMultiplier} {SecondRaidFloor} endless: {EndlessRaidMultiplier} {EndlessRaidFloor}");
+            output.AppendLine($"\tWAVES END: enabled: {enableWavesEndCondition} target: {WavesEndCondition} defeated: {wavesDefeated} targetReached: {wavesTargetReached} disabledDueToWaves: {disabledDueToWaveEndCondition}");
 
             return output.ToString().Trim();
         }

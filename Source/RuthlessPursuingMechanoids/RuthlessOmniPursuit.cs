@@ -44,6 +44,8 @@ namespace RuthlessPursuingMechanoids
         private const int InitialRaidFloorDef = 2000;
         private const int SecondRaidFloorDef = 8000;
         private const int EndlessRaidFloorDef = 10000;
+        private const bool EnableWavesEndConditionDef = false;
+        private const int WavesEndConditionDef = 10;
         /* These fields are the ones edited by the scenario part UI. They influence the actual values used in calculations. */
         /* - - FIRST RAID DELAY - - */
         /* Having a different value for the first raid allows the scenario part to be setup like the vanilla Pursuing Mechanoids, if desired.
@@ -86,6 +88,10 @@ namespace RuthlessPursuingMechanoids
         private string srfbuf;
         private int EndlessRaidFloor = EndlessRaidFloorDef;
         private string erfbuf;
+        /* - - WAVES END CONDITION - - */
+        private bool enableWavesEndCondition = EnableWavesEndConditionDef;
+        private int WavesEndCondition = WavesEndConditionDef;
+        private string wecbuf;
         /*-*-*-*-*- END OPTIONS VALUES -*-*-*-*-*/
         private List<Alert_PursuitFactionThreat> AlertCache = new List<Alert_PursuitFactionThreat>();
 
@@ -117,11 +123,13 @@ namespace RuthlessPursuingMechanoids
             Scribe_Values.Look(ref InitialRaidFloor, "initialraidfloor", InitialRaidFloorDef);
             Scribe_Values.Look(ref SecondRaidFloor, "secondraidfloor", SecondRaidFloorDef);
             Scribe_Values.Look(ref EndlessRaidFloor, "endlessraidfloor", EndlessRaidFloorDef);
+            Scribe_Values.Look(ref enableWavesEndCondition, "enableWavesEndCondition", EnableWavesEndConditionDef);
+            Scribe_Values.Look(ref WavesEndCondition, "wavesEndCondition", WavesEndConditionDef);
             DebugUtility.DebugLog($"--*-*-* Ruthless Omni Pursuit {Scribe.mode} END *-*-*--");
         }
         public override void DoEditInterface(Listing_ScenEdit listing)
         {
-            float totalBaseHeight = 14f + (defaultRaidValues ? 1f : 7f); ;
+            float totalBaseHeight = 14f + (enableWavesEndCondition ? 2f : 1f) + (defaultRaidValues ? 1f : 7f);
             Rect scenPartRect = listing.GetScenPartRect(this, ScenPart.RowHeight * totalBaseHeight);
             float rowHeight = scenPartRect.height / totalBaseHeight;
             Rect rect1 = new Rect(scenPartRect.x, scenPartRect.y, scenPartRect.width, rowHeight);
@@ -171,6 +179,27 @@ namespace RuthlessPursuingMechanoids
             Widgets.TextFieldNumericLabeled(rect13, "rpmEndlessWaveHours".Translate(), ref EndlessWavesHours, ref ewhbuf, 1, 14400);
             Widgets.CheckboxLabeled(rect14, "rpmNormalRaid".Translate(), ref canDoNormalRaid);
 
+            /* -- Waves end condition -- */
+            Rect rectWavesCheck = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 14f, scenPartRect.width, rowHeight);
+            Widgets.CheckboxLabeled(rectWavesCheck, "rpmEnableWavesEnd".Translate(), ref enableWavesEndCondition);
+            float wavesRowCount = 1f;
+            if (enableWavesEndCondition)
+            {
+                Rect rectWavesNum = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * 15f, scenPartRect.width, rowHeight);
+                Widgets.TextFieldNumericLabeled(rectWavesNum, "rpmWavesEndCondition".Translate(), ref WavesEndCondition, ref wecbuf, 1, 10000);
+                wavesRowCount = 2f;
+            }
+
+            /* Reassign remaining rects with wave rows offset */
+            float raidStart = 14f + wavesRowCount;
+            rect15 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * raidStart, scenPartRect.width, rowHeight);
+            rect16 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * (raidStart + 1f), scenPartRect.width, rowHeight);
+            rect17 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * (raidStart + 2f), scenPartRect.width, rowHeight);
+            rect18 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * (raidStart + 3f), scenPartRect.width, rowHeight);
+            rect19 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * (raidStart + 4f), scenPartRect.width, rowHeight);
+            rect20 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * (raidStart + 5f), scenPartRect.width, rowHeight);
+            rect21 = new Rect(scenPartRect.x, scenPartRect.y + rowHeight * (raidStart + 6f), scenPartRect.width, rowHeight);
+
             Widgets.CheckboxLabeled(rect15, "rpmDefaultRaidMulti".Translate(), ref defaultRaidValues);
             if (!defaultRaidValues)
             {
@@ -198,7 +227,8 @@ namespace RuthlessPursuingMechanoids
                                                                                                      RaidDelayVarianceHours, warningDisabled, WarningDelayHours, WarningDelayVarianceHours,
                                                                                                      SecondWaveHours, disableEndlessWaves, EndlessWavesHours, canDoNormalRaid,
                                                                                                      InitialRaidMultiplier, InitialRaidFloor, SecondRaidMultiplier, SecondRaidFloor,
-                                                                                                     EndlessRaidMultiplier, EndlessRaidFloor);
+                                                                                                     EndlessRaidMultiplier, EndlessRaidFloor,
+                                                                                                     enableWavesEndCondition, WavesEndCondition);
             pursuitParts.Add(newPursuit);
             DebugUtility.DebugLog($"added new pursuit for faction {facName}");
         }
