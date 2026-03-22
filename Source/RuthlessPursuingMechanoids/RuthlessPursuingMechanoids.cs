@@ -188,6 +188,7 @@ namespace RuthlessPursuingMechanoids
         private bool ReenableDueToRelations = false;
         private int wavesDefeated = 0;
         private Dictionary<Map, int> mapPendingWaves = new Dictionary<Map, int>();
+        private Dictionary<Map, int> mapLastRaidFireTick = new Dictionary<Map, int>();
         private bool wavesTargetReached = false;
         private bool disabledDueToWaveEndCondition = false;
         private bool FactionIsPermanentEnemy => pursuitFactionDef.permanentEnemy || PursuitFactionPermanentEnemy;
@@ -540,6 +541,7 @@ namespace RuthlessPursuingMechanoids
             wavesTargetReached = false;
             disabledDueToWaveEndCondition = false;
             mapPendingWaves.Clear();
+            mapLastRaidFireTick.Clear();
             DebugUtility.DebugLog(PrintFields());
         }
 
@@ -555,6 +557,7 @@ namespace RuthlessPursuingMechanoids
                 mapRaidTimers.Remove(map);
             }
             mapPendingWaves.Remove(map);
+            mapLastRaidFireTick.Remove(map);
         }
 
         private int TimerIntervalTick(int timer)
@@ -655,9 +658,11 @@ namespace RuthlessPursuingMechanoids
                 {
                     FireRaid_NewTemp(tmpMap, EndlessRaidMultiplier, EndlessRaidFloor);
                 }
-                /* Wave end condition: check if pending waves on this map have been defeated */
+                /* Wave end condition: check if pending waves on this map have been defeated.
+                 * Skip if a raid just fired this tick -- drop pods need time to land before pawns register as spawned threats. */
                 if (enableWavesEndCondition && !wavesTargetReached
-                    && mapPendingWaves.TryGetValue(tmpMap, out int pendingWaves) && pendingWaves > 0)
+                    && mapPendingWaves.TryGetValue(tmpMap, out int pendingWaves) && pendingWaves > 0
+                    && (!mapLastRaidFireTick.TryGetValue(tmpMap, out int lastFireTick) || Find.TickManager.TicksGame > lastFireTick))
                 {
                     bool threatsRemain = tmpMap.mapPawns.SpawnedPawnsInFaction(PursuitFaction)
                         .Any(p => GenHostility.IsActiveThreatToPlayer(p));
@@ -832,6 +837,7 @@ namespace RuthlessPursuingMechanoids
                 if (!mapPendingWaves.ContainsKey(map))
                     mapPendingWaves[map] = 0;
                 mapPendingWaves[map]++;
+                mapLastRaidFireTick[map] = Find.TickManager.TicksGame;
                 DebugUtility.DebugLog($"Wave fired for faction {PursuitFaction.Name}. Pending waves on map: {mapPendingWaves[map]}, Total defeated: {wavesDefeated}/{WavesEndCondition}");
             }
         }
